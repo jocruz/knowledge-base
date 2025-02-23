@@ -1,0 +1,198 @@
+{
+  "main": {
+    "id": "90a0f114f0046302",
+    "type": "split",
+    "children": [
+      {
+        "id": "8c5e3fdae1ec7a34",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "2e724ed319d388ca",
+            "type": "leaf",
+            "state": {
+              "type": "image",
+              "state": {
+                "file": "HTB/Doctor/Screenshots/archive-jinja-payload.png"
+              },
+              "icon": "lucide-image",
+              "title": "archive-jinja-payload"
+            }
+          },
+          {
+            "id": "37fefca2d2820374",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "HTB/Doctor/Doctor Walk Through.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Doctor Walk Through"
+            }
+          }
+        ],
+        "currentTab": 1
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "8965013f85e213ab",
+    "type": "split",
+    "children": [
+      {
+        "id": "3ad702f583e7ac38",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "38ecf8c9e2c09b19",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "33a0630c5d579869",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "65e01511e43c8d3d",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "f352e6a28acbc1ed",
+    "type": "split",
+    "children": [
+      {
+        "id": "ba4e9d293356414c",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "a0b03db45d837bd8",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "HTB/Doctor/Doctor Walk Through.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for Doctor Walk Through"
+            }
+          },
+          {
+            "id": "e79f0077d95bd934",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "HTB/Doctor/Doctor Walk Through.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from Doctor Walk Through"
+            }
+          },
+          {
+            "id": "789954ab40555136",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "a3e1292c9c87d34c",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "HTB/Doctor/Doctor Walk Through.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of Doctor Walk Through"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false
+    }
+  },
+  "active": "37fefca2d2820374",
+  "lastOpenFiles": [
+    "HTB/Doctor/Screenshots/archive-jinja-payload.png",
+    "HTB/Doctor/Screenshots/bash-payload.png",
+    "HTB/Doctor/Screenshots/burp-register.png",
+    "HTB/Doctor/Screenshots/archive-error.png",
+    "HTB/Doctor/Screenshots/archive-49.png",
+    "HTB/Doctor/Doctor Walk Through.md",
+    "HTB/Doctor/Screenshots/xss-payload.png",
+    "HTB/Doctor/Screenshots/burp-server-identity.png",
+    "HTB/Doctor/Screenshots/burp-stored-xss-register.png",
+    "HTB/Doctor/Screenshots/home-doctors.png",
+    "HTB/Doctor/Screenshots/homepage.png"
+  ]
+}
