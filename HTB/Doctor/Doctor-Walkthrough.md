@@ -1,4 +1,4 @@
-![[alAKF7KqE5nj9L3O-generated_image.jpg]]
+![[cover-photo.jpg]]
 ---
 
 # **Hack The Box: Doctor**
