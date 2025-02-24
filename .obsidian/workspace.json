@@ -11,18 +11,6 @@
             "id": "2e724ed319d388ca",
             "type": "leaf",
             "state": {
-              "type": "image",
-              "state": {
-                "file": "HTB/Doctor/Screenshots/archive-jinja-payload.png"
-              },
-              "icon": "lucide-image",
-              "title": "archive-jinja-payload"
-            }
-          },
-          {
-            "id": "37fefca2d2820374",
-            "type": "leaf",
-            "state": {
               "type": "markdown",
               "state": {
                 "file": "HTB/Doctor/Doctor Walk Through.md",
@@ -32,9 +20,20 @@
               "icon": "lucide-file",
               "title": "Doctor Walk Through"
             }
+          },
+          {
+            "id": "a20518d13e3ccd65",
+            "type": "leaf",
+            "state": {
+              "type": "image",
+              "state": {
+                "file": "HTB/Doctor/Screenshots/Part2/pysplunkRCE.png"
+              },
+              "icon": "lucide-image",
+              "title": "pysplunkRCE"
+            }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -181,18 +180,21 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "37fefca2d2820374",
+  "active": "2e724ed319d388ca",
   "lastOpenFiles": [
-    "HTB/Doctor/Screenshots/archive-jinja-payload.png",
-    "HTB/Doctor/Screenshots/bash-payload.png",
-    "HTB/Doctor/Screenshots/burp-register.png",
-    "HTB/Doctor/Screenshots/archive-error.png",
+    "HTB/Doctor/Screenshots/Part2/pysplunkRCE.png",
+    "HTB/Doctor/Screenshots/Part2/root.png",
     "HTB/Doctor/Screenshots/archive-49.png",
     "HTB/Doctor/Doctor Walk Through.md",
-    "HTB/Doctor/Screenshots/xss-payload.png",
-    "HTB/Doctor/Screenshots/burp-server-identity.png",
-    "HTB/Doctor/Screenshots/burp-stored-xss-register.png",
-    "HTB/Doctor/Screenshots/home-doctors.png",
-    "HTB/Doctor/Screenshots/homepage.png"
+    "HTB/Doctor/Screenshots/Part2/userflag.png",
+    "HTB/Doctor/Screenshots/Part2/pySplunkError.png",
+    "HTB/Doctor/Screenshots/Part2/grep-splunk-proc.png",
+    "HTB/Doctor/Screenshots/Part2/login-shaun.png",
+    "HTB/Doctor/Screenshots/Part2/enum-user-creds.png",
+    "HTB/Doctor/Screenshots/Part2",
+    "HTB/Doctor/Screenshots/New folder",
+    "HTB/Doctor/Screenshots/reverse-shell-success.png",
+    "HTB/Doctor/Screenshots/archive-error.png",
+    "HTB/Welcome.md"
   ]
 }
