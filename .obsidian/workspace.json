@@ -41,10 +41,10 @@
             "state": {
               "type": "image",
               "state": {
-                "file": "HTB/Doctor/Screenshots/source-code-xss.png"
+                "file": "HTB/Doctor/Screenshots/archive-jinja-payload.png"
               },
               "icon": "lucide-image",
-              "title": "source-code-xss"
+              "title": "archive-jinja-payload"
             }
           }
         ]
@@ -197,18 +197,18 @@
   "active": "2e724ed319d388ca",
   "lastOpenFiles": [
     "HTB/Doctor/Doctor Walk Through.md",
+    "HTB/Doctor/Screenshots/archive-jinja-payload.png",
     "HTB/Doctor/Ready.md",
+    "HTB/Doctor/Screenshots/bash-payload.png",
+    "HTB/Doctor/Screenshots/archive-error.png",
+    "HTB/Doctor/Screenshots/archive-49.png",
     "HTB/Doctor/Screenshots/source-code-xss.png",
     "HTB/Doctor/Screenshots/alAKF7KqE5nj9L3O-generated_image.jpg",
     "HTB/Doctor/Screenshots/Part2/pysplunkRCE.png",
     "HTB/Doctor/Untitled",
     "HTB/Doctor/Screenshots/Part2/root.png",
-    "HTB/Doctor/Screenshots/archive-49.png",
     "HTB/Doctor/Screenshots/Part2/userflag.png",
     "HTB/Doctor/Screenshots/Part2/pySplunkError.png",
-    "HTB/Doctor/Screenshots/Part2/grep-splunk-proc.png",
-    "HTB/Doctor/Screenshots/Part2/login-shaun.png",
-    "HTB/Doctor/Screenshots/Part2/enum-user-creds.png",
     "HTB/Doctor/Screenshots/Part2",
     "HTB/Doctor/Screenshots/New folder",
     "HTB/Welcome.md"

