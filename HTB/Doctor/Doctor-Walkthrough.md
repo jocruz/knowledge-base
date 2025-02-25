@@ -212,7 +212,7 @@ No reflection, **the site filters** our markup. Possibly **OWASP A03:2021 – In
 
 Lets check out the source code:
 
-<figure><img src="../../.gitbook/assets/source-code-archive.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../.gitbook/assets/source-code-xss.png" alt=""><figcaption></figcaption></figure>
 
 We learn that it is being filtered out, so we either have to look for ways to bypass the filtering to get a food in the door for vertical movement, but lets move on to another attack for now and return to it later if we aren't successful.
 
