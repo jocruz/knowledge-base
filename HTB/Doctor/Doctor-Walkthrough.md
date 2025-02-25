@@ -91,7 +91,7 @@ Visiting `http://10.10.10.209` gets us a “Health Solutions” page. From here 
 
 
 
-I notice:
+What I noticed:
 
 * Phone, address (not relevant for the hack, but typical corporate details).
   * We aren't going to call the number for this box, maybe in a real pen test as part of our OSINT, and we aren't going to visit the address again maybe as part of the OSINT enumeration but we are web app pen testers, so there is only one thing that sticks out.
