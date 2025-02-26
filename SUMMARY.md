@@ -2,7 +2,7 @@
 
 ## Welcome
 
-* [Page 1](README.md)
+* [Hacking with Purpose: My Security Path](README.md)
 
 ***
 

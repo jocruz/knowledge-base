@@ -1,4 +1,4 @@
-# Page 1
+# Hacking with Purpose: My Security Path
 
 ## **Welcome to My Web Application Security Knowledge Base**
 
@@ -24,10 +24,10 @@ I created this space to showcase my **web security expertise**—not just throug
 
 #### **👀 Who Am I?**
 
-I’m **John Cruz**, a **web application security enthusiast, penetration tester, and former full-stack developer.** My background in **both development and security** gives me a unique edge—I know how to **attack** applications just as well as I know how to **build** them securely.
+I’m **John or 0xJc**, a **web application security enthusiast, penetration tester, and former full-stack developer.** My background in **both development and security** gives me a unique edge—I know how to **attack** applications just as well as I know how to **build** them securely.
 
-📜 **Certifications:** **TCM Security PWPP, PWPA, PJPT**\
-💼 **Professional Experience:** Web3 Security Audits, OWASP-Based Testing, Cloud App Security\
+📜 **Certifications:** **TCM Security: PWPP, PWPA, PJPT ; Comptia: Sec+ 701**\
+💼 **Professional Experience:** Blockchain Web App Development, Web Application Pen Testing\
 🔍 **Focus Areas:** Application Security, API Security, Exploit Research
 
 #### **🎯 My Goal?**
