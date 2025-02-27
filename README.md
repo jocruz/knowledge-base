@@ -1,4 +1,8 @@
-# Hacking with Purpose: My Security Path
+---
+description: 'Hacking with Purpose: My Security Path'
+---
+
+# Hello World!
 
 ## **Welcome to My Web Application Security Knowledge Base**
 
