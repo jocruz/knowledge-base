@@ -15,4 +15,4 @@
 * [Introduction: Web Application Security](web-application-security/introduction-web-application-security.md)
 * [Authentication](web-application-security/authentication/README.md)
   * [Authentication Overview](web-application-security/authentication/authentication-overview.md)
-  * [PortSwigger Lab](web-application-security/authentication/portswigger-lab.md)
+  * [Password Reset Broken Logic (PortSwigger Lab)](web-application-security/authentication/password-reset-broken-logic-portswigger-lab.md)
