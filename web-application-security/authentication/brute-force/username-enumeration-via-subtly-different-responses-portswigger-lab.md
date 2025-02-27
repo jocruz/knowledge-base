@@ -11,6 +11,14 @@ description: >-
 
 ## **Lab - Username Enumeration via Subtly Different Responses**
 
+### **Objective**
+
+Identify valid usernames by detecting **subtle differences** in server responses to authentication attempts.
+
+[**Challenge Lab: Username Enumeration via Subtly Different Responses**](https://portswigger.net/web-security/authentication/password-based/lab-username-enumeration-via-subtly-different-responses)
+
+***
+
 ### **High-Level Summary**
 
 This lab explores username enumeration techniques by analyzing **subtle differences in server responses** to login attempts. By leveraging **Burp Suite's Grep - Match feature**, we identify valid usernames based on inconsistencies in authentication error messages. Additionally, we discuss **remediation strategies** to mitigate such vulnerabilities in real-world applications.
@@ -21,14 +29,6 @@ This lab explores username enumeration techniques by analyzing **subtle differen
 
 * **Burp Suite** – Intercepting requests, analyzing response variations, and automating attacks.
 * **ffuf** (optional) – Fast fuzzing for username enumeration.
-
-***
-
-### **Objective**
-
-Identify valid usernames by detecting **subtle differences** in server responses to authentication attempts.
-
-[**Challenge Lab: Username Enumeration via Subtly Different Responses**](https://portswigger.net/web-security/authentication/password-based/lab-username-enumeration-via-subtly-different-responses)
 
 ***
 

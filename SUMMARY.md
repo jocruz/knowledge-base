@@ -19,3 +19,6 @@
   * [Brute Force](web-application-security/authentication/brute-force/README.md)
     * [Brute Forcing Authentication (PortSwigger Lab)](web-application-security/authentication/brute-force/brute-forcing-authentication-portswigger-lab.md)
     * [Username Enumeration via Subtly Different Responses (PortSwigger Lab)](web-application-security/authentication/brute-force/username-enumeration-via-subtly-different-responses-portswigger-lab.md)
+  * [Response Timing Enumeration](web-application-security/authentication/response-timing-enumeration/README.md)
+    * [Response Time Enumeration (Concepts & Techniques)](web-application-security/authentication/response-timing-enumeration/response-time-enumeration-concepts-and-techniques.md)
+    * [Rate Limiting (Concepts & Bypass Techniques)](web-application-security/authentication/response-timing-enumeration/rate-limiting-concepts-and-bypass-techniques.md)
