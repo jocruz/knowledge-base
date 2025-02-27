@@ -22,3 +22,4 @@
   * [Response Timing Enumeration](web-application-security/authentication/response-timing-enumeration/README.md)
     * [Response Time Enumeration (Concepts & Techniques)](web-application-security/authentication/response-timing-enumeration/response-time-enumeration-concepts-and-techniques.md)
     * [Rate Limiting (Concepts & Bypass Techniques)](web-application-security/authentication/response-timing-enumeration/rate-limiting-concepts-and-bypass-techniques.md)
+    * [Username Enumeration via Response Timing (PortSwigger Lab)](web-application-security/authentication/response-timing-enumeration/username-enumeration-via-response-timing-portswigger-lab.md)
