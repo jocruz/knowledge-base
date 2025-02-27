@@ -13,4 +13,5 @@
 ## Web Application Security&#x20;
 
 * [Introduction: Web Application Security](web-application-security/introduction-web-application-security.md)
-* [Authentication](web-application-security/authentication.md)
+* [Authentication](web-application-security/authentication/README.md)
+  * [Authentication Overview](web-application-security/authentication/authentication-overview.md)
