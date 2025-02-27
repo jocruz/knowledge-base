@@ -16,4 +16,5 @@
 * [Authentication](web-application-security/authentication/README.md)
   * [Authentication Overview](web-application-security/authentication/authentication-overview/README.md)
     * [Password Reset Broken Logic (PortSwigger Lab)](web-application-security/authentication/authentication-overview/password-reset-broken-logic-portswigger-lab.md)
-  * [Brute Force](web-application-security/authentication/brute-force.md)
+  * [Brute Force](web-application-security/authentication/brute-force/README.md)
+    * [Brute Forcing Authentication (PortSwigger Lab)](web-application-security/authentication/brute-force/brute-forcing-authentication-portswigger-lab.md)
