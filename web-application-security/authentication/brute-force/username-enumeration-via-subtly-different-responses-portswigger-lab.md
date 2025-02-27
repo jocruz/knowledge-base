@@ -1,3 +1,10 @@
+---
+description: >-
+  This lab explores username enumeration through subtle response differences in
+  authentication. Learn how to detect these vulnerabilities using Burp Suite’s
+  Grep - Match feature.
+---
+
 # Username Enumeration via Subtly Different Responses (PortSwigger Lab)
 
 ***
