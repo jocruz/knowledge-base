@@ -18,3 +18,4 @@
     * [Password Reset Broken Logic (PortSwigger Lab)](web-application-security/authentication/authentication-overview/password-reset-broken-logic-portswigger-lab.md)
   * [Brute Force](web-application-security/authentication/brute-force/README.md)
     * [Brute Forcing Authentication (PortSwigger Lab)](web-application-security/authentication/brute-force/brute-forcing-authentication-portswigger-lab.md)
+    * [Username Enumeration via Subtly Different Responses (PortSwigger Lab)](web-application-security/authentication/brute-force/username-enumeration-via-subtly-different-responses-portswigger-lab.md)
