@@ -1,7 +1,5 @@
 # Brute Forcing Authentication (PortSwigger Lab)
 
-Here’s the **fully revised** version incorporating your requested tweaks:
-
 ***
 
 ## **Lab - Brute Forcing Authentication**
