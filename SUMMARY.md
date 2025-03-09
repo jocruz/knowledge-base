@@ -33,7 +33,7 @@
     * [Multi-Factor Authentication Overview](web-application-security/authentication/introduction-to-multi-factor-authentication-mfa/multi-factor-authentication-overview.md)
     * [2FA Bypass (PortSwigger Lab)](web-application-security/authentication/introduction-to-multi-factor-authentication-mfa/2fa-bypass-portswigger-lab.md)
     * [2FA broken logic (Portswigger Lab)](web-application-security/authentication/introduction-to-multi-factor-authentication-mfa/2fa-broken-logic-portswigger-lab.md)
-* [Access Control](web-application-security/access-control/README.md)
+* [Access Control](access-control.md)
   * [Access Control Overview](web-application-security/access-control/access-control-overview.md)
   * [User ID controlled by request parameter (PortSwigger Lab)](web-application-security/access-control/user-id-controlled-by-request-parameter-portswigger-lab.md)
   * [IDOR](web-application-security/access-control/idor/README.md)
@@ -56,3 +56,4 @@
   * [Blind SQL Injection Using Time Delays (PortSwigger Lab)](web-application-security/sql-injection-sqli/blind-sql-injection-using-time-delays-portswigger-lab.md)
 * [NoSql](web-application-security/nosql/README.md)
   * [NoSql Overview](web-application-security/nosql/nosql-overview.md)
+  * [Exploiting NoSQL operator injection to bypass authentication (PortSwigger Lab)](web-application-security/nosql/exploiting-nosql-operator-injection-to-bypass-authentication-portswigger-lab.md)

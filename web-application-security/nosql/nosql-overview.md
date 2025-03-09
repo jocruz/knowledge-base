@@ -58,7 +58,7 @@ db.users.find({ username: req.body.username, password: req.body.password });
 
 ### **Real-World Examples of NoSQL Injection Attacks**
 
-#### **📌 Example 1: Authentication Bypass in a Web App**
+#### &#x20;**Example 1: Authentication Bypass in a Web App**
 
 **Case Study: GitHub’s MongoDB NoSQL Injection Vulnerability (2012)**
 
@@ -76,7 +76,7 @@ db.users.find({ username: req.body.username, password: req.body.password });
 
 ***
 
-#### **📌 Example 2: Data Exfiltration via `$regex` Injection**
+&#x20;**Example 2: Data Exfiltration via `$regex` Injection**
 
 **Case Study: Online E-Commerce Platform**
 
@@ -93,7 +93,7 @@ db.users.find({ username: req.body.username, password: req.body.password });
 
 ***
 
-#### **📌 Example 3: Firebase Database Misconfiguration**
+#### **Example 3: Firebase Database Misconfiguration**
 
 **Case Study: Mobile App Data Leak**
 
@@ -144,7 +144,7 @@ User.findOne({ username: req.body.username, password: req.body.password }).exec(
 
 ***
 
-#### ✅ **2. Implement Strong Input Validation**
+#### &#x20;**2. Implement Strong Input Validation**
 
 * **Use libraries like** [**express-validator**](https://express-validator.github.io/) **for Node.js**.
 * **Example:**
@@ -167,7 +167,7 @@ app.post('/login', [
 
 ***
 
-#### ✅ **3. Restrict MongoDB Query Operators**
+#### &#x20;**3. Restrict MongoDB Query Operators**
 
 * **Why?** Prevents attackers from injecting `$ne`, `$regex`, or `$where`.
 * **Secure Example Using `mongo-sanitize`:**
@@ -186,7 +186,7 @@ app.post('/login', (req, res) => {
 
 ***
 
-#### ✅ **4. Implement Access Controls**
+#### **4. Implement Access Controls**
 
 * **Why?** Prevents unauthorized users from querying sensitive data.
 * **Best Practices:**
@@ -197,7 +197,7 @@ app.post('/login', (req, res) => {
 
 ***
 
-#### ✅ **5. Monitor & Log Query Behavior**
+#### &#x20;**5. Monitor & Log Query Behavior**
 
 * **Why?** Detects unusual queries that indicate injection attempts.
 * **Best Practices:**
