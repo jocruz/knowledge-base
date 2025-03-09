@@ -23,3 +23,12 @@
     * [Response Time Enumeration (Concepts & Techniques)](web-application-security/authentication/response-timing-enumeration/response-time-enumeration-concepts-and-techniques.md)
     * [Rate Limiting (Concepts & Bypass Techniques)](web-application-security/authentication/response-timing-enumeration/rate-limiting-concepts-and-bypass-techniques.md)
     * [Username Enumeration via Response Timing (PortSwigger Lab)](web-application-security/authentication/response-timing-enumeration/username-enumeration-via-response-timing-portswigger-lab.md)
+  * [Sequencer](web-application-security/authentication/sequencer/README.md)
+    * [Brute Forcing A Stay-Logged-In Cookie (PortSwigger Lab)](web-application-security/authentication/sequencer/brute-forcing-a-stay-logged-in-cookie-portswigger-lab.md)
+  * [Introduction to Multi-Factor Authentication (MFA)](web-application-security/authentication/introduction-to-multi-factor-authentication-mfa/README.md)
+    * [2FA Bypass (PortSwigger Lab)](web-application-security/authentication/introduction-to-multi-factor-authentication-mfa/2fa-bypass-portswigger-lab.md)
+    * [2FA broken logic (Portswigger Lab)](web-application-security/authentication/introduction-to-multi-factor-authentication-mfa/2fa-broken-logic-portswigger-lab.md)
+
+***
+
+* [Access Control](access-control.md)

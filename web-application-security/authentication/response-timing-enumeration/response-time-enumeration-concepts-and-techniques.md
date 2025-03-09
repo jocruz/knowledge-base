@@ -2,7 +2,7 @@
 description: >-
   This section provides a deeper look into response time enumeration techniques,
   explaining how attackers use authentication delays to extract information
-  about valid usernames and bypass security measu
+  about valid usernames and bypass security.
 ---
 
 # Response Time Enumeration (Concepts & Techniques)
