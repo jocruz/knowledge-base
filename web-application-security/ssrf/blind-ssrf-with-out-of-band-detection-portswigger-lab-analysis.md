@@ -32,7 +32,7 @@ This lab demonstrates **Blind Server-Side Request Forgery (SSRF)**, where the ap
 1. Navigate to the lab and select a product.
 2.  Use **Burp Suite** to intercept the **GET request** to the product page:
 
-    ```plaintext
+    ```html
     GET /product?productId=1 HTTP/2
     Host: <lab-url>
     Referer: https://<lab-url>/
@@ -46,7 +46,7 @@ This lab demonstrates **Blind Server-Side Request Forgery (SSRF)**, where the ap
 1. Send the request to **Burp Repeater** (Ctrl+R).
 2.  Modify the Referer header to another external domain:
 
-    ```plaintext
+    ```
     Referer: http://example.com/
     ```
 3. Send the request and check if the response remains **HTTP 200 OK**.
