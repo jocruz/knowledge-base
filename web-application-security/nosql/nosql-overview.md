@@ -1,48 +1,38 @@
 # NoSql Overview
 
-## **NoSQL Injection – Comprehensive Overview**
-
-### **High-Level Summary: NoSQL Injection**
-
-_**NoSQL Injection**_ is a security vulnerability that occurs when **unvalidated user input** is inserted into NoSQL database queries, allowing attackers to manipulate query logic. Unlike SQL Injection, which targets relational databases (MySQL, PostgreSQL, MSSQL), NoSQL injection exploits **schema-flexible databases** like **MongoDB, CouchDB, Firebase, and Elasticsearch**.
-
-#### **Potential Risks**
-
-* **Authentication Bypass:** Attackers log in without valid credentials.
-* **Data Exfiltration:** Extracting confidential user records.
-* **Data Manipulation:** Modifying or deleting documents.
-* **Denial of Service (DoS):** Executing large queries that crash the database.
+## NoSQL Injection – Comprehensive Overview
 
 ***
 
-### **Definition Table**
+### Introduction to NoSQL Injection
 
-| **Term**                  | **Definition**                                                                  |
-| ------------------------- | ------------------------------------------------------------------------------- |
-| **NoSQL Databases**       | Databases designed for flexible, unstructured data storage.                     |
-| **NoSQL Injection**       | An attack where unvalidated user input alters NoSQL queries.                    |
-| **$ne Operator**          | MongoDB’s "not equal to" operator (`{ "password": { "$ne": "" } }`)             |
-| **$regex Operator**       | Enables pattern-matching for queries (`{ "username": { "$regex": ".*" } }`)     |
-| **Schema-Less Design**    | NoSQL databases often lack rigid schemas, making them susceptible to injection. |
-| **Parameterized Queries** | A safe way to separate user input from database logic, preventing injection.    |
+NoSQL Injection is a security vulnerability that occurs when unvalidated user input is inserted into NoSQL database queries, allowing attackers to manipulate query logic. Unlike SQL Injection, which targets relational databases (MySQL, PostgreSQL, MSSQL), NoSQL Injection exploits schema-flexible databases such as MongoDB, CouchDB, Firebase, and Elasticsearch.
+
+#### Potential Risks of NoSQL Injection
+
+* Authentication Bypass – Attackers can log in without valid credentials.
+* Data Exfiltration – Attackers can extract confidential user records.
+* Data Manipulation – Attackers can modify or delete sensitive documents.
+* Denial of Service (DoS) – Large queries can overload and crash the database.
 
 ***
 
-### **How NoSQL Injection Works**
+### How NoSQL Injection Works
 
-Unlike SQL, NoSQL databases process queries as **JSON-like objects**. A **failure to validate or sanitize input** allows attackers to inject **special query operators** (`$ne`, `$gt`, `$regex`) into API endpoints or login forms.
+Unlike traditional SQL, NoSQL databases process queries as JSON-like objects. A failure to validate or sanitize input allows attackers to inject special query operators (`$ne`, `$gt`, `$regex`) into API endpoints or login forms.
 
-#### **Example: Vulnerable Code (MongoDB)**
+#### Example: Vulnerable Code (MongoDB Query in JavaScript/Node.js)
 
 ```javascript
 db.users.find({ username: req.body.username, password: req.body.password });
 ```
 
-* **Why it’s vulnerable?**
-  * The application **directly** accepts user input in `req.body.username` and `req.body.password` without sanitization.
-  * An attacker can modify this input to alter the query logic.
+#### Why is this Vulnerable?
 
-#### **Payload for Authentication Bypass**
+* The application directly accepts user input from `req.body.username` and `req.body.password` without sanitization.
+* An attacker can modify this input to alter the query logic.
+
+#### Payload for Authentication Bypass
 
 ```json
 {
@@ -51,103 +41,94 @@ db.users.find({ username: req.body.username, password: req.body.password });
 }
 ```
 
-* **Impact:**
-  * `"$ne": ""` makes the query return **any** document where `password` is **not empty**, effectively bypassing authentication.
+**Impact:**
+
+* The `$ne` (not equal) operator forces the database to return any document where the password is not empty, effectively bypassing authentication.
 
 ***
 
-### **Real-World Examples of NoSQL Injection Attacks**
+### Real-World Examples of NoSQL Injection Attacks
 
-#### &#x20;**Example 1: Authentication Bypass in a Web App**
+#### 1. Authentication Bypass in GitHub (2012)
 
-**Case Study: GitHub’s MongoDB NoSQL Injection Vulnerability (2012)**
-
-* **What Happened?**
-  * GitHub had a **MongoDB-based authentication system** vulnerable to NoSQL Injection.
-  *   Attackers sent:
+* Case Study: GitHub’s MongoDB NoSQL Injection Vulnerability
+* What Happened?
+  * GitHub had a MongoDB-based authentication system that was vulnerable to NoSQL Injection.
+  *   Attackers sent the following query:
 
       ```json
       { "username": { "$gt": "" }, "password": { "$gt": "" } }
       ```
-  * The query matched **any** non-empty username and password, **bypassing authentication** entirely.
-* **Fix:** GitHub implemented **parameterized queries** and **input validation**.
-
-📖 **Source**: [OWASP NoSQL Injection Reference](https://owasp.org/www-community/attacks/NoSQL_Injection)
+  * The query matched any non-empty username and password, bypassing authentication entirely.
+* Fix: GitHub implemented parameterized queries and input validation.
+* Source: [OWASP NoSQL Injection Reference](https://owasp.org/www-community/attacks/NoSQL_Injection)
 
 ***
 
-&#x20;**Example 2: Data Exfiltration via `$regex` Injection**
+#### 2. Data Exfiltration via `$regex` Injection
 
-**Case Study: Online E-Commerce Platform**
-
-* **What Happened?**
-  * An e-commerce site allowed **search queries** directly inside MongoDB.
-  *   Attackers used a **$regex-based NoSQL Injection payload** to enumerate usernames:
+* Case Study: E-Commerce Platform Attack
+* What Happened?
+  * An e-commerce website allowed search queries directly inside MongoDB.
+  *   Attackers used a `$regex`-based NoSQL Injection payload to enumerate usernames:
 
       ```json
       { "username": { "$regex": ".*" } }
       ```
-  * This query **retrieved all usernames** from the database.
-
-📖 **Source**: [PortSwigger’s NoSQL Injection Labs](https://portswigger.net/web-security/nosql-injection)
+  * This query retrieved all usernames from the database.
+* Source: [PortSwigger NoSQL Injection Labs](https://portswigger.net/web-security/nosql-injection)
 
 ***
 
-#### **Example 3: Firebase Database Misconfiguration**
+#### 3. Firebase Database Misconfiguration
 
-**Case Study: Mobile App Data Leak**
-
-* **What Happened?**
-  * A ride-sharing app stored user data **without authentication** in Firebase.
+* Case Study: Mobile App Data Leak
+* What Happened?
+  * A ride-sharing app stored user data without authentication in Firebase.
   *   Attackers manipulated API calls to retrieve sensitive user data:
 
       ```json
       { ".read": true }
       ```
-  * Over **100,000** user records were leaked.
-
-📖 **Source**: [Google Firebase Security Best Practices](https://firebase.google.com/docs/rules/basics)
-
-***
-
-### **Common NoSQL Injection Techniques**
-
-#### **1️⃣ Authentication Bypass**
-
-* **Payload:** `{ "password": { "$ne": "" } }`
-* **Effect:** Logs in as an admin without a password.
-
-#### **2️⃣ Extracting Usernames**
-
-* **Payload:** `{ "username": { "$regex": ".*" } }`
-* **Effect:** Retrieves all usernames.
-
-#### **3️⃣ Denial of Service (DoS)**
-
-* **Payload:** `{ "$where": "sleep(5000)" }`
-* **Effect:** Forces a **5-second delay**, overwhelming the database.
+  * Over 100,000 user records were leaked due to a misconfigured Firebase database.
+* Source: [Google Firebase Security Best Practices](https://firebase.google.com/docs/rules)
 
 ***
 
-### **Remediation: Preventing NoSQL Injection**
+### Common NoSQL Injection Techniques
 
-#### ✅ **1. Use Parameterized Queries**
+| Technique               | Payload Example                      | Effect                                              |
+| ----------------------- | ------------------------------------ | --------------------------------------------------- |
+| Authentication Bypass   | `{ "password": { "$ne": "" } }`      | Logs in as an admin without a password.             |
+| Extracting Usernames    | `{ "username": { "$regex": ".*" } }` | Retrieves all usernames.                            |
+| Denial of Service (DoS) | `{ "$where": "sleep(5000)" }`        | Forces a 5-second delay, overwhelming the database. |
 
-* **Why?** Prevents query logic from being altered by user input.
-* **Secure Example (MongoDB with Mongoose):**
+***
+
+### Remediation: Preventing NoSQL Injection
+
+#### 1. Use Parameterized Queries
+
+Why? Prevents query logic from being altered by user input.
+
+**Secure Example (MongoDB with Mongoose in Node.js)**
 
 ```javascript
 User.findOne({ username: req.body.username, password: req.body.password }).exec();
 ```
 
-* **Impact:** Ensures user input is treated as **data**, not **database logic**.
+Impact:
+
+* Ensures user input is treated as data, not executable database logic.
 
 ***
 
-#### &#x20;**2. Implement Strong Input Validation**
+#### 2. Implement Strong Input Validation
 
-* **Use libraries like** [**express-validator**](https://express-validator.github.io/) **for Node.js**.
-* **Example:**
+* Use validation libraries like `express-validator` for Node.js applications.
+* Ensure inputs match expected data types (e.g., restrict usernames to alphanumeric characters).
+
+**Secure Example (Node.js using express-validator)**
 
 ```javascript
 const { body, validationResult } = require('express-validator');
@@ -163,14 +144,17 @@ app.post('/login', [
 });
 ```
 
-* **Impact:** Rejects malformed input before it reaches the database.
+Impact:
+
+* Rejects malformed input before it reaches the database.
 
 ***
 
-#### &#x20;**3. Restrict MongoDB Query Operators**
+#### 3. Restrict MongoDB Query Operators
 
-* **Why?** Prevents attackers from injecting `$ne`, `$regex`, or `$where`.
-* **Secure Example Using `mongo-sanitize`:**
+Why? Prevents attackers from injecting `$ne`, `$regex`, or `$where`.
+
+**Secure Example Using `mongo-sanitize` in Node.js**
 
 ```javascript
 const sanitize = require('mongo-sanitize');
@@ -182,45 +166,55 @@ app.post('/login', (req, res) => {
 });
 ```
 
-* **Impact:** Removes **all special query operators** before execution.
+Impact:
+
+* Removes special query operators before execution.
 
 ***
 
-#### **4. Implement Access Controls**
+#### 4. Implement Access Controls
 
-* **Why?** Prevents unauthorized users from querying sensitive data.
-* **Best Practices:**
-  * Enforce **least privilege access** to database queries.
-  * Implement **role-based access control (RBAC)**.
+Why? Prevents unauthorized users from querying sensitive data.
 
-📖 **Reference:** [MongoDB Security Checklist](https://www.mongodb.com/docs/manual/administration/security-checklist/)
+**Best Practices:**
 
-***
+* Enforce least privilege access to database queries.
+* Implement role-based access control (RBAC) to restrict database interactions.
 
-#### &#x20;**5. Monitor & Log Query Behavior**
-
-* **Why?** Detects unusual queries that indicate injection attempts.
-* **Best Practices:**
-  * Log failed login attempts.
-  * Use a **SIEM** (Security Information and Event Management) tool.
-
-📖 **Reference:** [OWASP Logging and Monitoring](https://owasp.org/www-project-logging/)
+Source: [MongoDB Security Checklist](https://www.mongodb.com/docs/manual/security-checklist/)
 
 ***
 
-### **Conclusion**
+#### 5. Monitor & Log Query Behavior
 
-* NoSQL Injection **exploits schema-less databases** where input is improperly validated.
-* Attackers leverage **MongoDB operators** (`$ne`, `$regex`) to **bypass authentication** or **exfiltrate data**.
-* **Real-world examples** (GitHub, Firebase) show the importance of **secure query handling**.
-* **Remediation involves** parameterized queries, strict input validation, query sanitization, and access controls.
+Why? Detects unusual queries that indicate injection attempts.
+
+**Best Practices:**
+
+* Log failed login attempts to detect brute force attacks.
+* Use a SIEM (Security Information and Event Management) tool to monitor queries.
+
+Source: [OWASP Logging and Monitoring](https://owasp.org/www-community/controls/Logging_and_monitoring)
+
+***
+
+### Final Thoughts
+
+* NoSQL Injection exploits schema-less databases where input is improperly validated.
+* Attackers leverage MongoDB operators (`$ne`, `$regex`) to bypass authentication or exfiltrate data.
+* Real-world examples (GitHub, Firebase) highlight the importance of secure query handling.
+* Remediation involves:
+  * Parameterized queries
+  * Strict input validation
+  * Query sanitization
+  * Access controls
+
+By following secure coding best practices, regularly testing for vulnerabilities, and monitoring query behavior, organizations can mitigate the risks associated with NoSQL Injection attacks.
 
 ***
 
-#### **Further Reading**
+### Further Reading
 
-📖 [OWASP NoSQL Injection](https://owasp.org/www-community/attacks/NoSQL_Injection)\
-📖 [PortSwigger NoSQL Labs](https://portswigger.net/web-security/nosql-injection)\
-📖 [MongoDB Security Best Practices](https://www.mongodb.com/docs/manual/administration/security-checklist/)
-
-***
+[OWASP NoSQL Injection Guide](https://owasp.org/www-community/attacks/NoSQL_Injection)\
+[PortSwigger NoSQL Injection Labs](https://portswigger.net/web-security/nosql-injection)\
+[MongoDB Security Best Practices](https://www.mongodb.com/docs/manual/security/)
