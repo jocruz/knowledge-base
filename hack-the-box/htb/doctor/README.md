@@ -10,12 +10,16 @@ description: >-
 
 Hey there! This page serves as a **prelude** to my **HTB: Doctor** walkthrough, where I demonstrate **real-world web application penetration testing skills** with a focus on the **OWASP Top 10 vulnerabilities**.
 
-### **💡 Why This Walkthrough Matters**
+## HTB URL: [https://www.hackthebox.com/machines/doctor](https://www.hackthebox.com/machines/doctor)
+
+
+
+### **Why This Walkthrough Matters**
 
 * **For Employers**: This is a showcase of my **hands-on experience** with web app security, demonstrating **methodical enumeration**, **exploitation techniques**, and **privilege escalation strategies**.
 * **For Aspiring Pentesters**: If you're learning, this walkthrough is structured to help you **understand the mindset** behind each step, from initial recon to root access.
 
-### **🔍 What You'll See in This Walkthrough**
+### **What You'll See in This Walkthrough**
 
 * **Systematic Web Enumeration** → Identifying attack vectors with **Nmap, Burp Suite, and manual analysis**.
 * **Exploitation of Web Vulnerabilities** → Discovering and abusing **SSTI (Server-Side Template Injection)** to gain initial access.
@@ -26,5 +30,5 @@ Each section ties back to **real-world security concerns**, making this walkthro
 
 ***
 
-📌 **Next Steps**: Dive into the full walkthrough here →
+**Next Steps**: Dive into the full walkthrough here →
 

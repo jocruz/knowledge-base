@@ -4,11 +4,11 @@
 
 * [Hello World!](README.md)
 
-***
+## Hack The Box
 
-* [Hack The Box - Web App Pentesting Series](htb/README.md)
-  * [Pentesting HTB: Doctor](htb/doctor/README.md)
-    * [Doctor-Walkthrough](HTB/Doctor/Doctor-Walkthrough.md)
+* [Hack The Box - Web App Pentesting Series](hack-the-box/htb/README.md)
+  * [Pentesting HTB: Doctor](hack-the-box/htb/doctor/README.md)
+    * [Doctor-Walkthrough](hack-the-box/htb/doctor/doctor-walkthrough.md)
 
 ## Web Application Security&#x20;
 
