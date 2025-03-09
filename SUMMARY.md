@@ -2,7 +2,7 @@
 
 ## Welcome
 
-* [Hello World!](README.md)
+* [whoami && echo 'Hello, World!'](README.md)
 
 ## Hack The Box
 
