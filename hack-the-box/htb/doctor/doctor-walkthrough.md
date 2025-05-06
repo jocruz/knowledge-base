@@ -6,7 +6,9 @@ description: 'HTB URL: https://www.hackthebox.com/machines/doctor'
 
 <figure><img src="../../../.gitbook/assets/cover-photo.jpg" alt=""><figcaption></figcaption></figure>
 
-
+{% embed url="https://youtu.be/RnBm5BKWwtg" %}
+This is my video walkthrough of the lab!
+{% endembed %}
 
 ## **Hack The Box: Doctor**
 
